@@ -44,7 +44,7 @@ void run_init(int argc, char *argv[])
             stat(entry->d_name, &file_info);
             if (S_ISDIR(file_info.st_mode) && strcmp(entry->d_name, ".neogit") == 0)
             {
-                printf("exists\n");
+                printf("neogit repository has already initialized in %s\n",currentDirectory);
                 neogit_exists = 1;
                 break;
             }
@@ -55,6 +55,7 @@ void run_init(int argc, char *argv[])
 
     if (neogit_exists == 0)
     {
+        printf("Initialized empty Git repository in %s\n", firstDirectory);
         system("mkdir .neogit");
         system("attrib +h .neogit");
     }
