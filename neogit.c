@@ -8,6 +8,8 @@
 #include <sys/types.h>
 
 void run_init(int argc, char *argv[]);
+char *where_is_neogit();
+char *where_is_global_information();
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +24,6 @@ int main(int argc, char *argv[])
     {
         run_init(argc, argv);
     }
-
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -44,7 +45,7 @@ void run_init(int argc, char *argv[])
             stat(entry->d_name, &file_info);
             if (S_ISDIR(file_info.st_mode) && strcmp(entry->d_name, ".neogit") == 0)
             {
-                printf("neogit repository has already initialized in %s\n",currentDirectory);
+                printf("neogit repository has already initialized in %s\n", currentDirectory);
                 neogit_exists = 1;
                 break;
             }
@@ -59,4 +60,31 @@ void run_init(int argc, char *argv[])
         system("mkdir .neogit");
         system("attrib +h .neogit");
     }
+}
+char *where_is_neogit()
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+
+    struct dirent *entry;
+    struct stat file_info;
+
+    char currentDirectory[FILENAME_MAX];
+    do
+    {
+        getcwd(currentDirectory, sizeof(currentDirectory));
+        DIR *dir = opendir(".");
+        while ((entry = readdir(dir)) != NULL)
+        {
+            stat(entry->d_name, &file_info);
+            if (S_ISDIR(file_info.st_mode) && strcmp(entry->d_name, ".neogit") == 0)
+            {
+                chdir(firstDirectory);
+                char *output = (char *)malloc(100 * sizeof(char));
+                strcpy(output, currentDirectory);
+                return output;
+            }
+        }
+        chdir("..");
+    } while (strcmp(currentDirectory, "C:\\") != 0);
 }
