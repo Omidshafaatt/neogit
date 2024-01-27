@@ -10,7 +10,7 @@
 void run_init(int argc, char *argv[]);
 char *where_is_neogit();
 char *where_is_global_information();
-
+int count_character(char *, char);
 int main(int argc, char *argv[])
 {
 
@@ -19,11 +19,11 @@ int main(int argc, char *argv[])
         fprintf(stdout, "please enter a valid command");
         return 1;
     }
-
-    if (strcmp(argv[1], "init") == 0)
+    else if (strcmp(argv[1], "init") == 0)
     {
         run_init(argc, argv);
     }
+    printf("%s",where_is_global_information());
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -61,7 +61,7 @@ void run_init(int argc, char *argv[])
         system("attrib +h .neogit");
     }
 }
-char *where_is_neogit()
+char *where_is_neogit() // remember to free the pointer
 {
     char firstDirectory[FILENAME_MAX];
     getcwd(firstDirectory, sizeof(firstDirectory));
@@ -87,4 +87,36 @@ char *where_is_neogit()
         }
         chdir("..");
     } while (strcmp(currentDirectory, "C:\\") != 0);
+}
+int count_character(char *input, char character)
+{
+    int x = 0;
+    for (int i = 0; i < strlen(input); i++)
+    {
+        if (input[i] == character)
+        {
+            x++;
+        }
+    }
+    return x;
+}
+char *where_is_global_information() // remember to free the pointer
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+
+    char currentDirectory[FILENAME_MAX];
+    while (1)
+    {
+        getcwd(currentDirectory, sizeof(currentDirectory));
+        if (count_character(currentDirectory, '\\') == 2)
+        {
+            break;
+        }
+        chdir("..");
+    }
+    char *output = (char *)malloc(100 * sizeof(char));
+    strcpy(output, currentDirectory);
+    chdir(firstDirectory);
+    return output;
 }
