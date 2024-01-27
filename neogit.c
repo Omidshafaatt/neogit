@@ -168,5 +168,39 @@ void run_config(int argc, char *argv[])
     }
     else
     {
+        if (argc != 4)
+        {
+            printf("please enter a valid command\n");
+        }
+        else if (strcmp(argv[2], "user.name") == 0)
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            char *temp = where_is_neogit();
+            chdir(temp);
+            chdir(".neogit");
+            FILE *file = fopen("configN.txt", "w");
+            fprintf(file, "%s", argv[3]);
+            fclose(file);
+            free(temp);
+            chdir(firstDirectory);
+        }
+        else if (strcmp(argv[2], "user.email") == 0)
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            char *temp = where_is_neogit();
+            chdir(temp);
+            chdir(".neogit");
+            FILE *file = fopen("configE.txt", "w");
+            fprintf(file, "%s", argv[3]);
+            fclose(file);
+            free(temp);
+            chdir(firstDirectory);
+        }
+        else
+        {
+            printf("please enter a valid command\n");
+        }
     }
 }
