@@ -9,8 +9,10 @@
 
 void run_init(int argc, char *argv[]);
 char *where_is_neogit();
-char *where_is_global_information();
 int count_character(char *, char);
+char *where_is_global_information();
+void run_config(int argc, char *argv[]);
+
 int main(int argc, char *argv[])
 {
 
@@ -19,11 +21,14 @@ int main(int argc, char *argv[])
         fprintf(stdout, "please enter a valid command");
         return 1;
     }
-    else if (strcmp(argv[1], "init") == 0)
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "init") == 0)
     {
         run_init(argc, argv);
     }
-    printf("%s",where_is_global_information());
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "config") == 0)
+    {
+        run_config(argc, argv);
+    }
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -119,4 +124,49 @@ char *where_is_global_information() // remember to free the pointer
     strcpy(output, currentDirectory);
     chdir(firstDirectory);
     return output;
+}
+void run_config(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        printf("please enter a valid command\n");
+    }
+    else if (strcmp(argv[2], "--global") == 0)
+    {
+        if (argc != 5)
+        {
+            printf("please enter a valid command\n");
+        }
+        else if (strcmp(argv[3], "user.name") == 0)
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            char *temp = where_is_global_information();
+            chdir(temp);
+            FILE *file = fopen("configNGLOB.txt", "w");
+            fprintf(file, "%s", argv[4]);
+            fclose(file);
+            free(temp);
+            chdir(firstDirectory);
+        }
+        else if (strcmp(argv[3], "user.email") == 0)
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            char *temp = where_is_global_information();
+            chdir(temp);
+            FILE *file = fopen("configEGLOB.txt", "w");
+            fprintf(file, "%s", argv[4]);
+            fclose(file);
+            free(temp);
+            chdir(firstDirectory);
+        }
+        else
+        {
+            printf("please enter a valid command\n");
+        }
+    }
+    else
+    {
+    }
 }
