@@ -12,7 +12,12 @@ char *where_is_neogit();
 int count_character(char *, char);
 char *where_is_global_information();
 void run_config(int argc, char *argv[]);
-
+void run_add(int argc, char *argv[]);
+void listFilesRecursively(char *, FILE *);
+int compareFiles(FILE *, FILE *);
+void copy_file(char *, char *);
+void copy_folder(char *, char *);
+int isDirectoryEmpty(const char *);
 int main(int argc, char *argv[])
 {
 
@@ -29,6 +34,11 @@ int main(int argc, char *argv[])
     {
         run_config(argc, argv);
     }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "add") == 0)
+    {
+        run_add(argc, argv);
+    }
+
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -64,6 +74,12 @@ void run_init(int argc, char *argv[])
         printf("Initialized empty Git repository in %s\n", firstDirectory);
         system("mkdir .neogit");
         system("attrib +h .neogit");
+        chdir(".neogit");
+        system("mkdir stage");
+        FILE *file = fopen("ALL.txt", "w");
+        listFilesRecursively(firstDirectory, file);
+        fclose(file);
+        chdir(firstDirectory);
     }
 }
 char *where_is_neogit() // remember to free the pointer
@@ -202,5 +218,237 @@ void run_config(int argc, char *argv[])
         {
             printf("please enter a valid command\n");
         }
+    }
+}
+void run_add(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        printf("please enter a valid command\n");
+    }
+    else if (strcmp(argv[2], "-f") == 0)
+    {
+        /* code */
+    }
+    else if (strcmp(argv[2], "-n") == 0)
+    {
+        /* code */
+    }
+    else if (strcmp(argv[2], "-redo") == 0)
+    {
+        /* code */
+    }
+    else if (argc == 3)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+
+        char *origin = (char *)malloc(100 * sizeof(char));
+        strcpy(origin, firstDirectory);
+        strcat(origin, "\\");
+        strcat(origin, argv[2]);
+
+        struct stat file_info;
+        stat(origin, &file_info);
+        char *temptemp = where_is_neogit();
+        chdir(temptemp);
+        chdir(".neogit\\stage");
+        free(temptemp);
+        if (S_ISDIR(file_info.st_mode))
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                char *temp = (char *)malloc(sizeof(char));
+                sprintf(temp, "%d", i);
+                char *temp1 = (char *)malloc(sizeof(char));
+                sprintf(temp1, "%d", i - 1);
+                DIR *dir = opendir(temp);
+                if (dir == NULL)
+                {
+                    mkdir(temp);
+                    if (i == 0)
+                    {
+                        char *destination = (char *)malloc(100 * sizeof(char));
+                        destination = where_is_neogit();
+                        strcat(destination, "\\.neogit\\stage\\");
+                        strcat(destination, temp);
+                        copy_folder(origin, destination);
+                        free(destination);
+                    }
+                    else
+                    {
+                    }
+                }
+                free(temp);
+                free(temp1);
+                break;
+            }
+        }
+        else
+        {
+            FILE *file1 = fopen(origin, "r");
+            for (int i = 0; i < 10; i++)
+            {
+                char *temp = (char *)malloc(sizeof(char));
+                sprintf(temp, "%d", i);
+                char *temp1 = (char *)malloc(sizeof(char));
+                sprintf(temp1, "%d", i - 1);
+                DIR *dir = opendir(temp);
+                if (dir == NULL)
+                {
+                    mkdir(temp);
+                    if (i == 0)
+                    {
+                        copy_file(origin, temp);
+                        free(temp);
+                        break;
+                    }
+                    else
+                    {
+                        int flag = 0;
+                        chdir(temp1);
+                        struct dirent *entry;
+                        DIR *dir1 = opendir(".");
+                        while ((entry = readdir(dir1)) != NULL)
+                        {
+                            if (strcmp(entry->d_name, argv[2]) == 0)
+                            {
+                                flag = 1;
+                                FILE *file2 = fopen(entry->d_name, "r");
+                                if (compareFiles(file1, file2) == 0)
+                                {
+                                    chdir("..");
+                                    copy_file(origin, temp);
+                                    fclose(file2);
+                                    break;
+                                }
+                                else
+                                {
+                                    chdir("..");
+                                    fclose(file2);
+                                    printf("Already in stage\n");
+                                    break;
+                                }
+                            }
+                        }
+                        if (flag == 0)
+                        {
+                            chdir("..");
+                            copy_file(origin, temp);
+                            break;
+                        }
+                    }
+                    if (isDirectoryEmpty(temp) == 1)
+                    {
+                        char *temppppp = (char *)malloc(100 * sizeof(char));
+                        strcpy(temppppp, "rmdir ");
+                        strcat(temppppp, temp);
+                        system(temppppp);
+                        free(temppppp);
+                    }
+                    break;
+                }
+                free(temp);
+                free(temp1);
+            }
+            fclose(file1);
+        }
+        free(origin);
+        chdir(firstDirectory);
+    }
+
+    else
+    {
+        printf("please enter a valid command\n");
+    }
+}
+void listFilesRecursively(char *basePath, FILE *file)
+{
+    struct dirent *dp;
+    DIR *dir = opendir(basePath);
+
+    // Failed to open directory
+    if (!dir)
+    {
+        perror("Unable to open directory");
+        return;
+    }
+
+    while ((dp = readdir(dir)) != NULL)
+    {
+        // Ignore "." and ".."
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0) ////need change
+        {
+            // Construct the full path
+            char filePath[PATH_MAX];
+            snprintf(filePath, PATH_MAX, "%s/%s", basePath, dp->d_name);
+
+            // Check if it's a directory
+            struct stat st;
+            if (stat(filePath, &st) == 0 && S_ISDIR(st.st_mode))
+            {
+                // Recursively list files in subdirectory
+                listFilesRecursively(filePath, file);
+            }
+            else
+            {
+                // Print the file path
+                // printf("%s\n", filePath);
+                fprintf(file, "%s\n", filePath);
+            }
+        }
+    }
+
+    closedir(dir);
+}
+int compareFiles(FILE *file1, FILE *file2)
+{
+    char ch1, ch2;
+    // Compare each character in the files
+    while ((ch1 = fgetc(file1)) != EOF && (ch2 = fgetc(file2)) != EOF)
+    {
+        if (ch1 != ch2)
+        {
+            return 0; // Files are different
+        }
+    }
+    return 1;
+}
+void copy_file(char *origin, char *destination)
+{
+    char *temp = (char *)malloc(100 * sizeof(char));
+    strcpy(temp, "copy ");
+    strcat(temp, origin);
+    strcat(temp, " ");
+    strcat(temp, destination);
+    system(temp);
+    free(temp);
+}
+void copy_folder(char *origin, char *destination)
+{
+    char *temp = (char *)malloc(100 * sizeof(char));
+    strcpy(temp, "xcopy ");
+    strcat(temp, origin);
+    strcat(temp, " ");
+    strcat(temp, destination);
+    system(temp);
+    free(temp);
+}
+int isDirectoryEmpty(const char *path)
+{
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+    int x = 0;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        x++;
+    }
+    if (x > 2)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
     }
 }
