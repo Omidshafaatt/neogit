@@ -20,6 +20,7 @@ char *modification_time(char *);
 void copy_file(char *, char *);
 void listFilesRecursively_depth(char *, FILE *, int);
 int searchInFile(FILE *, char *);
+void copy_folder(char *origin, char *destination);
 
 int main(int argc, char *argv[])
 {
@@ -242,6 +243,7 @@ void run_add(int argc, char *argv[])
         chdir(temp);
         chdir(".neogit");
         free(temp);
+        char *temp1 = modification_time("stageHASH.txt");
         FILE *temp_file = fopen("temp.txt", "a");
         // fclose(temp_file);
         //  ساخت فایل آدرس ها
@@ -273,13 +275,25 @@ void run_add(int argc, char *argv[])
         }
         fclose(temp_file);
         system("del temp.txt");
+        char *temp2 = modification_time("stageHASH.txt");
+        if (strcmp(temp1, temp2) != 0)
+        {
+            FILE *file1 = fopen("stageHASH.txt", "a");
+            FILE *file2 = fopen("stageADDRESS.txt", "a");
+            fprintf(file1, "ADD\n");
+            fprintf(file2, "ADD\n");
+            fclose(file1);
+            fclose(file2);
+        }
+        free(temp1);
+        free(temp2);
         chdir(firstDirectory);
     }
     else if (strcmp(argv[2], "-n") == 0)
     {
         if (argc != 4)
         {
-            printf("\033[31mplease enter a valid command\033\n[0m");
+            printf("\033[31mplease enter a valid command\033[0m\n");
         }
         else
         {
@@ -313,6 +327,62 @@ void run_add(int argc, char *argv[])
             fclose(temp_file);
             chdir(firstDirectory);
             system("del temp.txt");
+        }
+    }
+    else if (strcmp(argv[2], "-redo") == 0)
+    {
+        if (argc != 3)
+        {
+            printf("\033[31mplease enter a valid command\033[0m\n");
+        }
+        else
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+
+            char *temp = where_is_neogit();
+            chdir(".neogit");
+            free(temp);
+            FILE *stage = fopen("stageHASH.txt", "r");
+            char line[20];
+            int HOW_MANY_ADD = 0;
+            while (fgets(line, sizeof(line), stage) != NULL)
+            {
+                line[strlen(line) - 1] = '\0';
+                if (strcmp(line, "ADD") == 0)
+                {
+                    HOW_MANY_ADD++;
+                }
+            }
+            fclose(stage);
+            FILE *stagehash = fopen("stageHASH.txt", "r");
+            FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+            char line1[100];
+            char line2[100];
+            int flag = 0;
+            while (fgets(line1, sizeof(line1), stagehash) != NULL)
+            {
+                line1[strlen(line1) - 1] = '\0';
+                fgets(line2, sizeof(line2), stageaddress);
+                line2[strlen(line2) - 1] = '\0';
+                if (strcmp(line1, "ADD") == 0)
+                {
+                    flag++;
+                }
+                if (flag == HOW_MANY_ADD - 1 && strcmp(line1, "ADD") != 0)
+                {
+                    char *temp_del = (char *)malloc(100 * sizeof(char));
+                    strcpy(temp_del, "del ");
+                    strcat(temp_del, line2);
+                    system(temp_del);
+                    free(temp_del);
+                    chdir(line1);
+                    copy_folder(".", line2);
+                    chdir("..");
+                }
+            }
+            fclose(stagehash);
+            fclose(stageaddress);
         }
     }
 }
@@ -479,4 +549,14 @@ int searchInFile(FILE *file, char *targetString) // remember to fclose file
         }
     }
     return 1;
+}
+void copy_folder(char *origin, char *destination)
+{
+    char *temp = (char *)malloc(100 * sizeof(char));
+    strcpy(temp, "xcopy ");
+    strcat(temp, origin);
+    strcat(temp, " ");
+    strcat(temp, destination);
+    system(temp);
+    free(temp);
 }
