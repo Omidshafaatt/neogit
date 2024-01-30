@@ -12,7 +12,9 @@ char *where_is_neogit();
 int count_character(char *, char);
 char *where_is_global_information();
 void run_config(int argc, char *argv[]);
-
+void run_add(int argc, char *argv[]);
+void add_for_absolute_address(char *);
+void listFilesRecursively(char *, FILE *);
 int main(int argc, char *argv[])
 {
 
@@ -29,6 +31,11 @@ int main(int argc, char *argv[])
     {
         run_config(argc, argv);
     }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "add") == 0)
+    {
+        run_add(argc, argv);
+    }
+
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -64,6 +71,10 @@ void run_init(int argc, char *argv[])
         printf("Initialized empty Git repository in %s\n", firstDirectory);
         system("mkdir .neogit");
         system("attrib +h .neogit");
+        chdir(".neogit");
+        FILE *file = fopen("stage.txt", "w");
+        fclose(file);
+        chdir(firstDirectory);
     }
 }
 char *where_is_neogit() // remember to free the pointer
@@ -203,4 +214,95 @@ void run_config(int argc, char *argv[])
             printf("please enter a valid command\n");
         }
     }
+}
+void run_add(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        printf("\033[31mplease enter a valid command\033[0m");
+        return;
+    }
+    else if (strcmp(argv[2], "-f") == 0 || (strcmp(argv[2], "-n") != 0 && strcmp(argv[2], "-redo") != 0))
+    {
+        int X;
+        if (strcmp(argv[2], "-f") == 0)
+            X = 3;
+        else if (argc == 3)
+            X = 2;
+        else
+        {
+            printf("\033[31mplease enter a valid command\033[0m");
+            return;
+        }
+
+        //////
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *temp_file = fopen("temp.txt", "a");
+        // fclose(temp_file);
+        //  ساخت فایل آدرس ها
+        while (X < argc)
+        {
+            char *origin = (char *)malloc(100 * sizeof(char));
+            strcpy(origin, firstDirectory);
+            strcat(origin, "\\");
+            strcat(origin, argv[X]);
+            struct stat file_info;
+            stat(origin, &file_info);
+            if (S_ISDIR(file_info.st_mode)) /// اگر مورد خواسته شده یک فولدر باشد
+            {
+                listFilesRecursively(origin, temp_file);
+            }
+            else ///// اگر فایل باشد
+            {
+                fprintf(temp_file, "%s\n", origin);
+            }
+            X++;
+        }
+        fclose(temp_file);
+    }
+}
+void add_for_absolute_address(char *input)
+{
+}
+void listFilesRecursively(char *basePath, FILE *file)
+{
+    struct dirent *dp;
+    DIR *dir = opendir(basePath);
+
+    // Failed to open directory
+    if (!dir)
+    {
+        perror("Unable to open directory");
+        return;
+    }
+
+    while ((dp = readdir(dir)) != NULL)
+    {
+        // Ignore "." and ".."
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0) ////need change
+        {
+            // Construct the full path
+            char filePath[PATH_MAX];
+            snprintf(filePath, PATH_MAX, "%s\\%s", basePath, dp->d_name);
+
+            // Check if it's a directory
+            struct stat st;
+            if (stat(filePath, &st) == 0 && S_ISDIR(st.st_mode))
+            {
+                // Recursively list files in subdirectory
+                listFilesRecursively(filePath, file);
+            }
+            else
+            {
+                fprintf(file, "%s\n", filePath);
+            }
+        }
+    }
+
+    closedir(dir);
 }
