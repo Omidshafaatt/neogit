@@ -33,6 +33,10 @@ int main(int argc, char *argv[])
         fprintf(stdout, "please enter a valid command");
         return 1;
     }
+    else if (where_is_neogit() == NULL)
+    {
+        printf("\033[31mThere is no neogit repo\033\n[0m");
+    }
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "init") == 0)
     {
         run_init(argc, argv);
