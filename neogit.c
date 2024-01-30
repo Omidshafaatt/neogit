@@ -574,6 +574,79 @@ void run_reset(int argc, char *argv[])
     {
         printf("\033[31mplease enter a valid command\033\n[0m");
     }
+    else if (strcmp(argv[2], "-undo") == 0)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *stage = fopen("stageHASH.txt", "r");
+        char line[20];
+        int HOW_MANY_ADD = 0;
+        while (fgets(line, sizeof(line), stage) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            if (strcmp(line, "ADD") == 0)
+            {
+                HOW_MANY_ADD++;
+            }
+        }
+        fclose(stage);
+        char line1[100];
+        int flag = 0;
+        int line_counter = 1;
+        FILE *stagehash = fopen("stageHASH.txt", "r");
+        while (fgets(line1, sizeof(line1), stagehash) != NULL)
+        {
+            line1[strlen(line1) - 1] = '\0';
+            if (strcmp(line1, "ADD") == 0)
+            {
+                flag++;
+            }
+            if (strcmp(line1, "ADD") == 0 && flag == HOW_MANY_ADD - 1)
+            {
+                break;
+            }
+            line_counter++;
+        }
+        fclose(stagehash);
+        stagehash = fopen("stageHASH.txt", "r");
+        FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+        FILE *hash = fopen("stagehashtemp.txt", "w");
+        FILE *address = fopen("stageaddresstemp.txt", "w");
+        char line2[100];
+        char line3[100];
+        int A = 1;
+        while (fgets(line2, sizeof(line2), stagehash) != NULL)
+        {
+            fgets(line3, sizeof(line3), stageaddress);
+            if (A <= line_counter)
+            {
+                fputs(line2, hash);
+                fputs(line3, address);
+            }
+            else
+            {
+                char *temp_rmdir = (char *)malloc(100 * sizeof(char));
+                strcpy(temp_rmdir, "rmdir /s ");
+                strcat(temp_rmdir, line2);
+                system(temp_rmdir);
+                free(temp_rmdir);
+            }
+            A++;
+        }
+        fclose(stagehash);
+        fclose(stageaddress);
+        fclose(hash);
+        fclose(address);
+        system("del stageHASH.txt");
+        system("del stageADDRESS.txt");
+        rename("stagehashtemp.txt","stageHASH.txt");
+        rename("stageaddresstemp.txt","stageADDRESS.txt");
+        chdir(firstDirectory);
+    }
     else
     {
         int X;
@@ -678,8 +751,8 @@ void reset_for_absolute_address(char *input)
             WHICH_LINE++;
         }
         free(temp);
-        //fclose(stagehash);
-        //fclose(stageaddress);
+        // fclose(stagehash);
+        // fclose(stageaddress);
     }
 }
 void removeLineFromFile(FILE *file, int lineToRemove, char *file_name)
