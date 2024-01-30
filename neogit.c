@@ -18,10 +18,11 @@ void add_for_absolute_address(char *);
 void listFilesRecursively(char *, FILE *);
 char *modification_time(char *);
 void copy_file(char *, char *);
+void listFilesRecursively_depth(char *, FILE *, int);
+int searchInFile(FILE *, char *);
 
 int main(int argc, char *argv[])
 {
-
     if (argc < 2)
     {
         fprintf(stdout, "please enter a valid command");
@@ -39,7 +40,6 @@ int main(int argc, char *argv[])
     {
         run_add(argc, argv);
     }
-
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -226,7 +226,6 @@ void run_add(int argc, char *argv[])
     if (argc == 2)
     {
         printf("\033[31mplease enter a valid command\033\n[0m");
-        return;
     }
     else if (strcmp(argv[2], "-f") == 0 || (strcmp(argv[2], "-n") != 0 && strcmp(argv[2], "-redo") != 0))
     {
@@ -276,6 +275,46 @@ void run_add(int argc, char *argv[])
         system("del temp.txt");
         chdir(firstDirectory);
     }
+    else if (strcmp(argv[2], "-n") == 0)
+    {
+        if (argc != 4)
+        {
+            printf("\033[31mplease enter a valid command\033\n[0m");
+        }
+        else
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            FILE *temp_file = fopen("temp.txt", "w");
+            listFilesRecursively_depth(firstDirectory, temp_file, atoi(argv[3]));
+            fclose(temp_file);
+            temp_file = fopen("temp.txt", "r");
+            char *temp = where_is_neogit();
+            chdir(temp);
+            chdir(".neogit");
+            free(temp);
+            char line[100];
+            while (fgets(line, sizeof(line), temp_file) != NULL)
+            {
+                FILE *stage = fopen("stageHASH.txt", "r");
+                line[strlen(line) - 1] = '\0';
+                temp = modification_time(line);
+                if (searchInFile(stage, temp) == 0)
+                {
+                    printf("\033[32m%s is already in stage\033[0m\n", line);
+                }
+                else
+                {
+                    printf("\033[31m%s isn't in stage\033[0m\n", line);
+                }
+                fclose(stage);
+                free(temp);
+            }
+            fclose(temp_file);
+            chdir(firstDirectory);
+            system("del temp.txt");
+        }
+    }
 }
 void add_for_absolute_address(char *input)
 {
@@ -315,6 +354,7 @@ void add_for_absolute_address(char *input)
             chdir(HASH);
             copy_file(input, ".");
             chdir("..");
+            printf("\033[32m%s successfully add to stage\033[0m\n", input);
         }
         free(HASH);
     }
@@ -386,4 +426,57 @@ void copy_file(char *origin, char *destination)
     system(temp);
     free(temp);
 }
+void listFilesRecursively_depth(char *basePath, FILE *file, int n)
+{
+    if (n <= 0)
+    {
+        return;
+    }
+    struct dirent *dp;
+    DIR *dir = opendir(basePath);
 
+    // Failed to open directory
+    if (!dir)
+    {
+        perror("Unable to open directory");
+        return;
+    }
+
+    while ((dp = readdir(dir)) != NULL)
+    {
+        // Ignore "." and ".."
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0) ////need change
+        {
+            // Construct the full path
+            char filePath[PATH_MAX];
+            snprintf(filePath, PATH_MAX, "%s\\%s", basePath, dp->d_name);
+
+            // Check if it's a directory
+            struct stat st;
+            if (stat(filePath, &st) == 0 && S_ISDIR(st.st_mode))
+            {
+                // Recursively list files in subdirectory
+                listFilesRecursively_depth(filePath, file, n - 1);
+            }
+            else
+            {
+                fprintf(file, "%s\n", filePath);
+            }
+        }
+    }
+
+    closedir(dir);
+}
+int searchInFile(FILE *file, char *targetString) // remember to fclose file
+{
+    char line[256];
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        line[strlen(line) - 1] = '\0';
+        if (strcmp(line, targetString) == 0)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
