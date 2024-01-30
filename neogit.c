@@ -24,6 +24,7 @@ void copy_folder(char *origin, char *destination);
 void run_reset(int argc, char *argv[]);
 void reset_for_absolute_address(char *);
 void removeLineFromFile(FILE *, int, char *);
+void run_status(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
@@ -47,6 +48,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "reset") == 0)
     {
         run_reset(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "status") == 0)
+    {
+        run_status(argc, argv);
     }
 
     return 0;
@@ -643,8 +648,8 @@ void run_reset(int argc, char *argv[])
         fclose(address);
         system("del stageHASH.txt");
         system("del stageADDRESS.txt");
-        rename("stagehashtemp.txt","stageHASH.txt");
-        rename("stageaddresstemp.txt","stageADDRESS.txt");
+        rename("stagehashtemp.txt", "stageHASH.txt");
+        rename("stageaddresstemp.txt", "stageADDRESS.txt");
         chdir(firstDirectory);
     }
     else
@@ -776,4 +781,67 @@ void removeLineFromFile(FILE *file, int lineToRemove, char *file_name)
     }
     fclose(outputFile);
     rename("tempfile.txt", file_name);
+}
+void run_status(int argc, char *argv[])
+{
+    if (argc != 2)
+    {
+        printf("\033[31mplease enter a valid command\033\n[0m");
+    }
+    else
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *all = fopen("ALL.txt", "w");
+        listFilesRecursively("..", all);
+        fclose(all);
+        all = fopen("ALL.txt", "r");
+        char line[100];
+        while (fgets(line, sizeof(line), all) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            printf("%s\t", line);
+            FILE *stagehash = fopen("stageHASH.txt", "r");
+            FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+            temp = modification_time(line);
+            if (searchInFile(stagehash, temp) == 0)
+            {
+                printf("\033[32m+\033[0m\n");
+            }
+            else
+            {
+                printf("-");
+                if (searchInFile(stageaddress, line) == 0)
+                {
+                    printf("M\n");
+                }
+                else
+                {
+                    printf("\033[34mA\033[0m\n");
+                }
+            }
+            free(temp);
+            fclose(stagehash);
+            fclose(stageaddress);
+        }
+        fclose(all);
+        FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+        while (fgets(line, sizeof(line), stageaddress) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            FILE *check = fopen(line, "r");
+            if (check == NULL && strcmp(line , "ADD") != 0)
+            {
+                printf("%s\t-\033[31mD\033[0m\n", line);
+            }
+            fclose(check);
+        }
+        system("del ALL.txt");
+        fclose(stageaddress);
+        chdir(firstDirectory);
+    }
 }
