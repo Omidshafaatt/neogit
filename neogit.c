@@ -21,6 +21,9 @@ void copy_file(char *, char *);
 void listFilesRecursively_depth(char *, FILE *, int);
 int searchInFile(FILE *, char *);
 void copy_folder(char *origin, char *destination);
+void run_reset(int argc, char *argv[]);
+void reset_for_absolute_address(char *);
+void removeLineFromFile(FILE *, int, char *);
 
 int main(int argc, char *argv[])
 {
@@ -41,6 +44,11 @@ int main(int argc, char *argv[])
     {
         run_add(argc, argv);
     }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "reset") == 0)
+    {
+        run_reset(argc, argv);
+    }
+
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -444,7 +452,7 @@ void listFilesRecursively(char *basePath, FILE *file)
     while ((dp = readdir(dir)) != NULL)
     {
         // Ignore "." and ".."
-        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0) ////need change
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0 && strstr(dp->d_name, ".neogit") == 0) ////need change
         {
             // Construct the full path
             char filePath[PATH_MAX];
@@ -515,7 +523,7 @@ void listFilesRecursively_depth(char *basePath, FILE *file, int n)
     while ((dp = readdir(dir)) != NULL)
     {
         // Ignore "." and ".."
-        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0) ////need change
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && strstr(dp->d_name, ".git") == 0 && strstr(dp->d_name, ".neogit") == 0) ////need change
         {
             // Construct the full path
             char filePath[PATH_MAX];
@@ -559,4 +567,140 @@ void copy_folder(char *origin, char *destination)
     strcat(temp, destination);
     system(temp);
     free(temp);
+}
+void run_reset(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        printf("\033[31mplease enter a valid command\033\n[0m");
+    }
+    else
+    {
+        int X;
+        if (strcmp(argv[2], "-f") == 0)
+            X = 3;
+        else
+            X = 2;
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *temp_file = fopen("temp.txt", "a");
+        ///// فایل آدرس ها
+        while (X < argc)
+        {
+            char *origin = (char *)malloc(100 * sizeof(char));
+            strcpy(origin, firstDirectory);
+            strcat(origin, "\\");
+            strcat(origin, argv[X]);
+            struct stat file_info;
+            stat(origin, &file_info);
+            if (S_ISDIR(file_info.st_mode)) /// اگر مورد خواسته شده یک فولدر باشد
+            {
+                listFilesRecursively(origin, temp_file);
+            }
+            else ///// اگر فایل باشد
+            {
+                fprintf(temp_file, "%s\n", origin);
+            }
+            X++;
+        }
+        fclose(temp_file);
+        temp_file = fopen("temp.txt", "r");
+        char line[100];
+        while (fgets(line, sizeof(line), temp_file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            reset_for_absolute_address(line);
+        }
+        fclose(temp_file);
+        system("del temp.txt");
+        chdir(firstDirectory);
+    }
+}
+void reset_for_absolute_address(char *input)
+{
+    FILE *file_check = fopen(input, "r");
+    if (file_check == NULL)
+    {
+        perror("\033[31mthere is no such file or directory here\033[0m\n");
+        fclose(file_check); //////////////////??????
+    }
+    else
+    {
+        fclose(file_check);
+        FILE *stage = fopen("stageHASH.txt", "r");
+        char line[20];
+        int HOW_MANY_ADD = 0;
+        while (fgets(line, sizeof(line), stage) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            if (strcmp(line, "ADD") == 0)
+            {
+                HOW_MANY_ADD++;
+            }
+        }
+        fclose(stage);
+        FILE *stagehash = fopen("stageHASH.txt", "r");
+        FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+        char line1[100];
+        int flag = 0;
+        int WHICH_LINE = 1;
+        char *temp = modification_time(input);
+        while (fgets(line1, sizeof(line1), stagehash) != NULL)
+        {
+            line1[strlen(line1) - 1] = '\0';
+            if (strcmp(line1, "ADD") == 0)
+            {
+                flag++;
+            }
+            if (flag == HOW_MANY_ADD - 1 && strcmp(temp, line1) == 0)
+            {
+                fclose(stagehash);
+                stagehash = fopen("stageHASH.txt", "r");
+                removeLineFromFile(stagehash, WHICH_LINE, "stageHASH1.txt");
+                fclose(stagehash);
+                system("del stageHASH.txt");
+                rename("stageHASH1.txt", "stageHASH.txt");
+                removeLineFromFile(stageaddress, WHICH_LINE, "stageADDRESS1.txt");
+                fclose(stageaddress);
+                system("del stageADDRESS.txt");
+                rename("stageADDRESS1.txt", "stageADDRESS.txt");
+                char *temp_rmdir = (char *)malloc(100 * sizeof(char));
+                strcpy(temp_rmdir, "rmdir /s ");
+                strcat(temp_rmdir, line1);
+                system(temp_rmdir);
+                free(temp_rmdir);
+                break;
+            }
+            WHICH_LINE++;
+        }
+        free(temp);
+        //fclose(stagehash);
+        //fclose(stageaddress);
+    }
+}
+void removeLineFromFile(FILE *file, int lineToRemove, char *file_name)
+{
+    FILE *outputFile = fopen("tempfile.txt", "w");
+    char line[100];
+    if (outputFile == NULL)
+    {
+        perror("Error creating temporary file");
+        fclose(file);
+        return;
+    }
+    int currentLine = 1;
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        if (currentLine != lineToRemove)
+        {
+            fputs(line, outputFile);
+        }
+        currentLine++;
+    }
+    fclose(outputFile);
+    rename("tempfile.txt", file_name);
 }
