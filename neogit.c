@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 
 void run_init(int argc, char *argv[]);
 char *where_is_neogit();
@@ -15,6 +16,9 @@ void run_config(int argc, char *argv[]);
 void run_add(int argc, char *argv[]);
 void add_for_absolute_address(char *);
 void listFilesRecursively(char *, FILE *);
+char *modification_time(char *);
+void copy_file(char *, char *);
+
 int main(int argc, char *argv[])
 {
 
@@ -68,11 +72,13 @@ void run_init(int argc, char *argv[])
 
     if (neogit_exists == 0)
     {
-        printf("Initialized empty Git repository in %s\n", firstDirectory);
+        printf("\033[32mInitialized empty Git repository in %s\033[0m", firstDirectory);
         system("mkdir .neogit");
         system("attrib +h .neogit");
         chdir(".neogit");
-        FILE *file = fopen("stage.txt", "w");
+        FILE *file = fopen("stageHASH.txt", "w");
+        fclose(file);
+        file = fopen("stageADDRESS.txt", "w");
         fclose(file);
         chdir(firstDirectory);
     }
@@ -219,7 +225,7 @@ void run_add(int argc, char *argv[])
 {
     if (argc == 2)
     {
-        printf("\033[31mplease enter a valid command\033[0m");
+        printf("\033[31mplease enter a valid command\033\n[0m");
         return;
     }
     else if (strcmp(argv[2], "-f") == 0 || (strcmp(argv[2], "-n") != 0 && strcmp(argv[2], "-redo") != 0))
@@ -227,13 +233,8 @@ void run_add(int argc, char *argv[])
         int X;
         if (strcmp(argv[2], "-f") == 0)
             X = 3;
-        else if (argc == 3)
-            X = 2;
         else
-        {
-            printf("\033[31mplease enter a valid command\033[0m");
-            return;
-        }
+            X = 2;
 
         //////
         char firstDirectory[FILENAME_MAX];
@@ -264,10 +265,59 @@ void run_add(int argc, char *argv[])
             X++;
         }
         fclose(temp_file);
+        temp_file = fopen("temp.txt", "r");
+        char line[100];
+        while (fgets(line, sizeof(line), temp_file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            add_for_absolute_address(line);
+        }
+        fclose(temp_file);
+        system("del temp.txt");
+        chdir(firstDirectory);
     }
 }
 void add_for_absolute_address(char *input)
 {
+    FILE *file_check = fopen(input, "r");
+    if (file_check == NULL)
+    {
+        perror("\033[31mthere is no such file or directory here\033[0m\n");
+        fclose(file_check); //////////////////??????
+    }
+    else
+    {
+        fclose(file_check);
+        FILE *stage = fopen("stageHASH.txt", "r");
+        char line[100];
+        int flag = 0;
+        char *HASH = modification_time(input);
+        while (fgets(line, sizeof(line), stage) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            if (strcmp(line, HASH) == 0)
+            {
+                printf("\033[33mAlready in stage\033\n[0m");
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            fclose(stage);
+            stage = fopen("stageHASH.txt", "a");
+            fprintf(stage, "%s\n", HASH); ///// STAGE HASH COMPLITED
+            fclose(stage);
+            stage = fopen("stageADDRESS.txt", "a");
+            fprintf(stage, "%s\n", input);
+            fclose(stage); ///// STAGE ADDRESS COMPLITED
+            mkdir(HASH);
+            chdir(HASH);
+            copy_file(input, ".");
+            chdir("..");
+        }
+        free(HASH);
+    }
 }
 void listFilesRecursively(char *basePath, FILE *file)
 {
@@ -306,3 +356,34 @@ void listFilesRecursively(char *basePath, FILE *file)
 
     closedir(dir);
 }
+char *modification_time(char *file_path) // remember to free
+{
+    struct stat file_info;
+
+    if (stat(file_path, &file_info) == 0)
+    {
+        time_t modification_time = file_info.st_mtime;
+
+        char time_string[50];
+        strftime(time_string, sizeof(time_string), "%Y%m%d%H%M%S", localtime(&modification_time));
+        char *temp = (char *)malloc(50 * sizeof(char));
+        strcpy(temp, time_string);
+
+        return temp;
+    }
+    else
+    {
+        perror("error!");
+    }
+}
+void copy_file(char *origin, char *destination)
+{
+    char *temp = (char *)malloc(100 * sizeof(char));
+    strcpy(temp, "copy ");
+    strcat(temp, origin);
+    strcat(temp, " ");
+    strcat(temp, destination);
+    system(temp);
+    free(temp);
+}
+
