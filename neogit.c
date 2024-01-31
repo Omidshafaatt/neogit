@@ -1440,6 +1440,72 @@ void run_log(int argc, char *argv[])
         fclose(file);
         system("del temp.txt");
     }
+    else if (argc == 4 && strcmp(argv[2], "-since") == 0)
+    {
+        char line0[100];
+        char line1[100];
+        char line2[100];
+        char line3[100];
+        char line4[100];
+        char line5[100];
+        reverseLines("COMMIT.txt", "temp.txt");
+        FILE *file = fopen("temp.txt", "r");
+        while (fgets(line0, sizeof(line0), file) != NULL)
+        {
+            fgets(line1, sizeof(line1), file);
+            fgets(line2, sizeof(line2), file);
+            fgets(line3, sizeof(line3), file);
+            fgets(line4, sizeof(line4), file);
+            fgets(line5, sizeof(line5), file);
+            line5[strlen(line5) - 1] = '\0';
+            if (strcmp(line5, argv[3]) < 0)
+            {
+                break;
+            }
+            printf("\033[36mNUMBER OF COMMITED FILES : \033[35m%s\033[0m", line0);
+            printf("\033[36mMESSAGE : \033[35m%s\033[0m", line1);
+            printf("\033[36mGMAIL : \033[35m%s\033[0m", line2);
+            printf("\033[36mNAME : \033[35m%s\033[0m", line3);
+            printf("\033[36mBRANCH : \033[35m%s\033[0m", line4);
+            printf("\033[36mID : \033[35m%s\033[0m\n", line5);
+            printf("\033[36mTIME : \033[35mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", line5[0], line5[1], line5[2], line5[3], line5[4], line5[5], line5[6], line5[7], line5[8], line5[9], line5[10], line5[11], line5[12], line5[13]);
+        }
+        fclose(file);
+        system("del temp.txt");
+    }
+    else if (argc == 4 && strcmp(argv[2], "-before") == 0)
+    {
+        char line0[100];
+        char line1[100];
+        char line2[100];
+        char line3[100];
+        char line4[100];
+        char line5[100];
+        reverseLines("COMMIT.txt", "temp.txt");
+        FILE *file = fopen("temp.txt", "r");
+        while (fgets(line0, sizeof(line0), file) != NULL)
+        {
+            fgets(line1, sizeof(line1), file);
+            fgets(line2, sizeof(line2), file);
+            fgets(line3, sizeof(line3), file);
+            fgets(line4, sizeof(line4), file);
+            fgets(line5, sizeof(line5), file);
+            line5[strlen(line5) - 1] = '\0';
+            if (strcmp(line5, argv[3]) > 0)
+            {
+                continue;
+            }
+            printf("\033[36mNUMBER OF COMMITED FILES : \033[35m%s\033[0m", line0);
+            printf("\033[36mMESSAGE : \033[35m%s\033[0m", line1);
+            printf("\033[36mGMAIL : \033[35m%s\033[0m", line2);
+            printf("\033[36mNAME : \033[35m%s\033[0m", line3);
+            printf("\033[36mBRANCH : \033[35m%s\033[0m", line4);
+            printf("\033[36mID : \033[35m%s\033[0m\n", line5);
+            printf("\033[36mTIME : \033[35mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", line5[0], line5[1], line5[2], line5[3], line5[4], line5[5], line5[6], line5[7], line5[8], line5[9], line5[10], line5[11], line5[12], line5[13]);
+        }
+        fclose(file);
+        system("del temp.txt");
+    }
 
     chdir(firstDirectory);
 }
