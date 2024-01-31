@@ -293,7 +293,7 @@ void run_add(int argc, char *argv[])
 {
     if (argc == 2)
     {
-        printf("\033[31mplease enter a valid command\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     else if (strcmp(argv[2], "-f") == 0 || (strcmp(argv[2], "-n") != 0 && strcmp(argv[2], "-redo") != 0))
     {
@@ -840,7 +840,7 @@ void run_status(int argc, char *argv[])
 {
     if (argc != 2)
     {
-        printf("\033[31mplease enter a valid command\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     else
     {
@@ -920,7 +920,7 @@ void run_commit(int argc, char *argv[])
     }
     if (argc != 4 || (strcmp(argv[2], "-m") != 0 && strcmp(argv[2], "-s") != 0))
     {
-        printf("\033[31mplease enter a valid command\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     else
     {
@@ -1124,7 +1124,7 @@ void run_set(int argc, char *argv[])
 {
     if (argc != 6 || strcmp(argv[2], "-m") != 0 || strcmp(argv[4], "-s") != 0)
     {
-        printf("\033[31mplease enter a valid command\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     else
     {
@@ -1185,7 +1185,7 @@ void run_replace(int argc, char *argv[])
     free(temp);
     if (argc != 6 || strcmp(argv[2], "-m") != 0 || strcmp(argv[4], "-s") != 0)
     {
-        printf("\033[31mplease enter a valid command\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     else
     {
@@ -1234,7 +1234,7 @@ void run_remove(int argc, char *argv[])
     free(temp);
     if (argc != 4 || strcmp(argv[2], "-s") != 0)
     {
-        printf("\033[31mplease enter a valid command\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     else
     {
@@ -1506,7 +1506,7 @@ void run_log(int argc, char *argv[])
         fclose(file);
         system("del temp.txt");
     }
-    else if (argc == 4 && strcmp(argv[2], "-search") == 0)
+    else if (strcmp(argv[2], "-search") == 0) //////////////////wild card?
     {
         char line0[100];
         char line1[100];
@@ -1524,7 +1524,15 @@ void run_log(int argc, char *argv[])
             fgets(line4, sizeof(line4), file);
             fgets(line5, sizeof(line5), file);
             line1[strlen(line1) - 1] = '\0';
-            if (strstr(line1, argv[3]) == NULL)
+            int count = 0;
+            for (int i = 3; i < argc; i++)
+            {
+                if (strstr(line1, argv[i]) == NULL)
+                {
+                    count++;
+                }
+            }
+            if (count == argc - 3)
             {
                 continue;
             }
@@ -1539,10 +1547,12 @@ void run_log(int argc, char *argv[])
         fclose(file);
         system("del temp.txt");
     }
-
+    else
+    {
+        printf("\033[32mthe shortcut successfully replace\033\n[0m");
+    }
     chdir(firstDirectory);
 }
-
 void reverseLines(char *inputFileName, char *outputFileName)
 {
     FILE *inputFile = fopen(inputFileName, "r");
