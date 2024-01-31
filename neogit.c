@@ -1280,7 +1280,7 @@ void run_log(int argc, char *argv[])
     chdir(temp);
     chdir(".neogit");
     free(temp);
-    if (argc = 2)
+    if (argc == 2)
     {
         char line[200];
         reverseLines("COMMIT.txt", "temp.txt");
@@ -1306,8 +1306,53 @@ void run_log(int argc, char *argv[])
                 printf("\033[36mBRANCH : \033[0m");
                 break;
             case 5:
-                printf("\033[36mID : \033[35m%s\033[0m",line);
+                printf("\033[36mID : \033[35m%s\033[0m", line);
                 printf("\033[36mTIME : \033[35mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7], line[8], line[9], line[10], line[11], line[12], line[13]);
+                break;
+            }
+            if (i % 6 != 5)
+            {
+                printf("\033[35m%s\033[0m", line);
+            }
+            i++;
+        }
+        fclose(file);
+        system("del temp.txt");
+    }
+    else if (argc == 4 && strcmp(argv[2], "-n") == 0)
+    {
+        char line[200];
+        reverseLines("COMMIT.txt", "temp.txt");
+        FILE *file = fopen("temp.txt", "r");
+        int i = 0;
+        int A = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            if (A == atoi(argv[3]))
+            {
+                break;
+            }
+            switch (i % 6)
+            {
+            case 0:
+                printf("\033[36mNUMBER OF COMMITED FILES : \033[0m");
+                break;
+            case 1:
+                printf("\033[36mMESSAGE : \033[0m");
+                break;
+            case 2:
+                printf("\033[36mGMAIL : \033[0m");
+                break;
+            case 3:
+                printf("\033[36mNAME : \033[0m");
+                break;
+            case 4:
+                printf("\033[36mBRANCH : \033[0m");
+                break;
+            case 5:
+                printf("\033[36mID : \033[35m%s\033[0m", line);
+                printf("\033[36mTIME : \033[35mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7], line[8], line[9], line[10], line[11], line[12], line[13]);
+                A++;
                 break;
             }
             if (i % 6 != 5)
