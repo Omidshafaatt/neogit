@@ -894,6 +894,10 @@ void run_commit(int argc, char *argv[])
         chdir(".neogit");
         free(temp);
         char *shr = shortcut("COMMMITMSG.txt", argv[3]);
+        if (strcmp(shr,"NO") == 0)
+        {
+            return;
+        }
         strcpy(argv[3], shr);
         free(shr);
         chdir(firstDirectory);
@@ -942,6 +946,9 @@ void run_commit(int argc, char *argv[])
                 fclose(file);
                 file = fopen("COMMMIT.txt", "a");
                 fprintf(file, "%s\n", temp);
+                printf("\033[32mID : %s\033\n[0m",temp);
+                printf("\033[32mTIME : Y:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m",temp[0],temp[1],temp[2],temp[3],temp[4],temp[5],temp[6],temp[7],temp[8],temp[9],temp[10],temp[11],temp[12],temp[13]);
+                printf("\033[32mMESSAGE : %s\033\n[0m",argv[3]);
                 free(temp);
                 /////////////
                 FILE *branch = fopen("WHICHBRANCH.txt", "r");
@@ -1116,6 +1123,7 @@ void run_set(int argc, char *argv[])
         fprintf(commitmsg, "%s %s\n", argv[5], argv[3]);
         fclose(commitmsg);
         chdir(firstDirectory);
+        printf("\033[32mthe shortcut successfully set\033\n[0m");
     }
 }
 char *shortcut(char *file_name, char *target) /////////remembe to free
@@ -1138,6 +1146,7 @@ char *shortcut(char *file_name, char *target) /////////remembe to free
     if (flag == 0)
     {
         printf("\033[31mthrere is no shortcut with given name\033\n[0m");
+        return "NO";
     }
     else
     {
