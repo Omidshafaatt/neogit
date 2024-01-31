@@ -35,6 +35,8 @@ void run_set(int argc, char *argv[]);
 char *shortcut(char *file_name, char *target);
 void run_replace(int argc, char *argv[]);
 void run_remove(int argc, char *argv[]);
+void run_log(int argc, char *argv[]);
+void reverseLines(char *, char *);
 
 int main(int argc, char *argv[])
 {
@@ -82,6 +84,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "remove") == 0)
     {
         run_remove(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "log") == 0)
+    {
+        run_log(argc, argv);
     }
 
     return 0;
@@ -1265,4 +1271,87 @@ void run_remove(int argc, char *argv[])
         }
         chdir(firstDirectory);
     }
+}
+void run_log(int argc, char *argv[])
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    if (argc = 2)
+    {
+        char line[200];
+        reverseLines("COMMIT.txt", "temp.txt");
+        FILE *file = fopen("temp.txt", "r");
+        int i = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            switch (i % 6)
+            {
+            case 0:
+                printf("\033[36mNUMBER OF COMMITED FILES : \033[0m");
+                break;
+            case 1:
+                printf("\033[36mMESSAGE : \033[0m");
+                break;
+            case 2:
+                printf("\033[36mGMAIL : \033[0m");
+                break;
+            case 3:
+                printf("\033[36mNAME : \033[0m");
+                break;
+            case 4:
+                printf("\033[36mBRANCH : \033[0m");
+                break;
+            case 5:
+                printf("\033[36mID : \033[35m%s\033[0m",line);
+                printf("\033[36mTIME : \033[35mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7], line[8], line[9], line[10], line[11], line[12], line[13]);
+                break;
+            }
+            if (i % 6 != 5)
+            {
+                printf("\033[35m%s\033[0m", line);
+            }
+            i++;
+        }
+        fclose(file);
+        system("del temp.txt");
+    }
+
+    chdir(firstDirectory);
+}
+void reverseLines(char *inputFileName, char *outputFileName)
+{
+    FILE *inputFile = fopen(inputFileName, "r");
+    if (inputFile == NULL)
+    {
+        perror("error!");
+        return;
+    }
+    FILE *outputFile = fopen(outputFileName, "w");
+    if (outputFile == NULL)
+    {
+        perror("error!");
+        fclose(inputFile);
+        return;
+    }
+    char **lines = NULL;
+    char buffer[256];
+    int lineCount = 0;
+    while (fgets(buffer, sizeof(buffer), inputFile) != NULL)
+    {
+        lines = realloc(lines, (lineCount + 1) * sizeof(char *));
+        lines[lineCount] = strdup(buffer);
+        lineCount++;
+    }
+    for (int i = lineCount - 1; i >= 0; i--)
+    {
+        fprintf(outputFile, "%s", lines[i]);
+        free(lines[i]);
+    }
+    free(lines);
+    fclose(inputFile);
+    fclose(outputFile);
 }
