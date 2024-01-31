@@ -31,6 +31,8 @@ void move_file(char *origin, char *destination);
 int how_many_differnt_line(FILE *file);
 char *WHO_NAME();
 char *WHO_EMAIL();
+void run_set(int argc, char *argv[]);
+char *shortcut(char *file_name, char *target);
 
 int main(int argc, char *argv[])
 {
@@ -67,8 +69,11 @@ int main(int argc, char *argv[])
     {
         run_commit(argc, argv);
     }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "set") == 0)
+    {
+        run_set(argc, argv);
+    }
 
-    
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -880,7 +885,20 @@ void run_status(int argc, char *argv[])
 }
 void run_commit(int argc, char *argv[])
 {
-    if (argc != 4 || (strcmp(argv[2], "-m") != 0 && strcmp(argv[2], "-s") != 0 ))
+    if (strcmp(argv[2], "-s") == 0)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        char *shr = shortcut("COMMMITMSG.txt", argv[3]);
+        strcpy(argv[3], shr);
+        free(shr);
+        chdir(firstDirectory);
+    }
+    if (argc != 4 || (strcmp(argv[2], "-m") != 0 && strcmp(argv[2], "-s") != 0))
     {
         printf("\033[31mplease enter a valid command\033\n[0m");
     }
@@ -937,8 +955,8 @@ void run_commit(int argc, char *argv[])
                 temp = WHO_EMAIL();
                 fprintf(file, "%s\n", temp);
                 free(temp);
-                fprintf(file,"%s\n",argv[3]);
-                fprintf(file,"%d\n",HOW_MANY_FILE);
+                fprintf(file, "%s\n", argv[3]);
+                fprintf(file, "%d\n", HOW_MANY_FILE);
                 fclose(file);
             }
         }
@@ -1078,4 +1096,57 @@ char *WHO_EMAIL() ///////////remember to free
     }
     chdir(firstDirectory);
     return output;
+}
+void run_set(int argc, char *argv[])
+{
+    if (argc != 6 || strcmp(argv[2], "-m") != 0 || strcmp(argv[4], "-s") != 0)
+    {
+        printf("\033[31mplease enter a valid command\033\n[0m");
+    }
+    else
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        //////////
+        FILE *commitmsg = fopen("COMMMITMSG.txt", "a");
+        fprintf(commitmsg, "%s %s\n", argv[5], argv[3]);
+        fclose(commitmsg);
+        chdir(firstDirectory);
+    }
+}
+char *shortcut(char *file_name, char *target) /////////remembe to free
+{
+    FILE *file = fopen(file_name, "r");
+    char line[100];
+    char line1[100];
+    char line2[100];
+    int flag = 0;
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        line[strlen(line) - 1] = '\0';
+        sscanf(line, "%s", line1);
+        if (strcmp(line1, target) == 0)
+        {
+            flag = 1;
+            break;
+        }
+    }
+    if (flag == 0)
+    {
+        printf("\033[31mthrere is no shortcut with given name\033\n[0m");
+    }
+    else
+    {
+        for (int i = strlen(line1); i < strlen(line); i++)
+        {
+            line2[i - strlen(line1)] = line[i + 1];
+        }
+        char *output = (char *)malloc(100 * sizeof(char));
+        strcpy(output, line2);
+        return output;
+    }
 }
