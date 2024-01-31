@@ -33,6 +33,8 @@ char *WHO_NAME();
 char *WHO_EMAIL();
 void run_set(int argc, char *argv[]);
 char *shortcut(char *file_name, char *target);
+void run_replace(int argc, char *argv[]);
+void run_remove(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
@@ -72,6 +74,14 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "set") == 0)
     {
         run_set(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "replace") == 0)
+    {
+        run_replace(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "remove") == 0)
+    {
+        run_remove(argc, argv);
     }
 
     return 0;
@@ -893,8 +903,8 @@ void run_commit(int argc, char *argv[])
         chdir(temp);
         chdir(".neogit");
         free(temp);
-        char *shr = shortcut("COMMMITMSG.txt", argv[3]);
-        if (strcmp(shr,"NO") == 0)
+        char *shr = shortcut("COMMITMSG.txt", argv[3]);
+        if (strcmp(shr, "NO") == 0)
         {
             return;
         }
@@ -944,11 +954,11 @@ void run_commit(int argc, char *argv[])
                 fclose(file);
                 file = fopen("stageADDRESS.txt", "w");
                 fclose(file);
-                file = fopen("COMMMIT.txt", "a");
+                file = fopen("COMMIT.txt", "a");
                 fprintf(file, "%s\n", temp);
-                printf("\033[32mID : %s\033\n[0m",temp);
-                printf("\033[32mTIME : Y:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m",temp[0],temp[1],temp[2],temp[3],temp[4],temp[5],temp[6],temp[7],temp[8],temp[9],temp[10],temp[11],temp[12],temp[13]);
-                printf("\033[32mMESSAGE : %s\033\n[0m",argv[3]);
+                printf("\033[32mID : %s\033\n[0m", temp);
+                printf("\033[32mTIME : Y:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", temp[0], temp[1], temp[2], temp[3], temp[4], temp[5], temp[6], temp[7], temp[8], temp[9], temp[10], temp[11], temp[12], temp[13]);
+                printf("\033[32mMESSAGE : %s\033\n[0m", argv[3]);
                 free(temp);
                 /////////////
                 FILE *branch = fopen("WHICHBRANCH.txt", "r");
@@ -1119,7 +1129,7 @@ void run_set(int argc, char *argv[])
         chdir(".neogit");
         free(temp);
         //////////
-        FILE *commitmsg = fopen("COMMMITMSG.txt", "a");
+        FILE *commitmsg = fopen("COMMITMSG.txt", "a");
         fprintf(commitmsg, "%s %s\n", argv[5], argv[3]);
         fclose(commitmsg);
         chdir(firstDirectory);
@@ -1157,5 +1167,102 @@ char *shortcut(char *file_name, char *target) /////////remembe to free
         char *output = (char *)malloc(100 * sizeof(char));
         strcpy(output, line2);
         return output;
+    }
+}
+void run_replace(int argc, char *argv[])
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    if (argc != 6 || strcmp(argv[2], "-m") != 0 || strcmp(argv[4], "-s") != 0)
+    {
+        printf("\033[31mplease enter a valid command\033\n[0m");
+    }
+    else
+    {
+        FILE *file = fopen("COMMITMSG.txt", "r");
+        FILE *temp_file = fopen("temp.txt", "w");
+        char line[100];
+        char line1[100];
+        int flag = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            sscanf(line, "%s", line1);
+            if (strcmp(line1, argv[5]) == 0)
+            {
+                fprintf(temp_file, "%s %s\n", argv[5], argv[3]);
+                flag = 1;
+                continue;
+            }
+            fprintf(temp_file, "%s\n", line);
+        }
+        if (flag == 0)
+        {
+            fclose(temp_file);
+            system("del temp.txt");
+            printf("\033[31mthrere is no shortcut with given name\033\n[0m");
+            fclose(file);
+        }
+        else
+        {
+            fclose(file);
+            fclose(temp_file);
+            system("del COMMITMSG.txt");
+            rename("temp.txt", "COMMITMSG.txt");
+            printf("\033[32mthe shortcut successfully replace\033\n[0m");
+        }
+    }
+    chdir(firstDirectory);
+}
+void run_remove(int argc, char *argv[])
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    if (argc != 4 || strcmp(argv[2], "-s") != 0)
+    {
+        printf("\033[31mplease enter a valid command\033\n[0m");
+    }
+    else
+    {
+        FILE *file = fopen("COMMITMSG.txt", "r");
+        FILE *temp_file = fopen("temp.txt", "w");
+        char line[100];
+        char line1[100];
+        int flag = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            sscanf(line, "%s", line1);
+            if (strcmp(line1, argv[3]) == 0)
+            {
+                flag = 1;
+                continue;
+            }
+            fprintf(temp_file, "%s\n", line);
+        }
+        if (flag == 0)
+        {
+            fclose(temp_file);
+            system("del temp.txt");
+            printf("\033[31mthrere is no shortcut with given name\033\n[0m");
+            fclose(file);
+        }
+        else
+        {
+            fclose(file);
+            fclose(temp_file);
+            system("del COMMITMSG.txt");
+            rename("temp.txt", "COMMITMSG.txt");
+            printf("\033[32mthe shortcut successfully replace\033\n[0m");
+        }
+        chdir(firstDirectory);
     }
 }
