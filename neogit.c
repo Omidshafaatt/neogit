@@ -33,13 +33,13 @@ int main(int argc, char *argv[])
         fprintf(stdout, "please enter a valid command");
         return 1;
     }
-    else if (where_is_neogit() == NULL)
-    {
-        printf("\033[31mThere is no neogit repo\033\n[0m");
-    }
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "init") == 0)
     {
         run_init(argc, argv);
+    }
+    else if (where_is_neogit() == NULL)
+    {
+        printf("\033[31mThere is no neogit repo\033\n[0m");
     }
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "config") == 0)
     {
@@ -838,7 +838,7 @@ void run_status(int argc, char *argv[])
         {
             line[strlen(line) - 1] = '\0';
             FILE *check = fopen(line, "r");
-            if (check == NULL && strcmp(line , "ADD") != 0)
+            if (check == NULL && strcmp(line, "ADD") != 0)
             {
                 printf("%s\t-\033[31mD\033[0m\n", line);
             }
