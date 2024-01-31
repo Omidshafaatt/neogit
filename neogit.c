@@ -25,6 +25,12 @@ void run_reset(int argc, char *argv[]);
 void reset_for_absolute_address(char *);
 void removeLineFromFile(FILE *, int, char *);
 void run_status(int argc, char *argv[]);
+void run_commit(int argc, char *argv[]);
+char *getCurrentTime();
+void move_file(char *origin, char *destination);
+int how_many_differnt_line(FILE *file);
+char *WHO_NAME();
+char *WHO_EMAIL();
 
 int main(int argc, char *argv[])
 {
@@ -57,7 +63,12 @@ int main(int argc, char *argv[])
     {
         run_status(argc, argv);
     }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "commit") == 0)
+    {
+        run_commit(argc, argv);
+    }
 
+    
     return 0;
 }
 void run_init(int argc, char *argv[])
@@ -97,6 +108,12 @@ void run_init(int argc, char *argv[])
         FILE *file = fopen("stageHASH.txt", "w");
         fclose(file);
         file = fopen("stageADDRESS.txt", "w");
+        fclose(file);
+        file = fopen("WHICHBRANCH.txt", "w");
+        fprintf(file, "master");
+        fclose(file);
+        file = fopen("ALLBRANCHS.txt", "w");
+        fprintf(file, "master\n");
         fclose(file);
         chdir(firstDirectory);
     }
@@ -183,6 +200,12 @@ void run_config(int argc, char *argv[])
             fclose(file);
             free(temp);
             chdir(firstDirectory);
+            temp = where_is_neogit();
+            chdir(temp);
+            chdir(".neogit");
+            system("del configN.txt");
+            free(temp);
+            chdir(firstDirectory);
         }
         else if (strcmp(argv[3], "user.email") == 0)
         {
@@ -193,6 +216,12 @@ void run_config(int argc, char *argv[])
             FILE *file = fopen("configEGLOB.txt", "w");
             fprintf(file, "%s", argv[4]);
             fclose(file);
+            free(temp);
+            chdir(firstDirectory);
+            temp = where_is_neogit();
+            chdir(temp);
+            chdir(".neogit");
+            system("del configE.txt");
             free(temp);
             chdir(firstDirectory);
         }
@@ -799,9 +828,9 @@ void run_status(int argc, char *argv[])
         char *temp = where_is_neogit();
         chdir(temp);
         chdir(".neogit");
-        free(temp);
         FILE *all = fopen("ALL.txt", "w");
-        listFilesRecursively("..", all);
+        listFilesRecursively(temp, all);
+        free(temp);
         fclose(all);
         all = fopen("ALL.txt", "r");
         char line[100];
@@ -818,10 +847,10 @@ void run_status(int argc, char *argv[])
             }
             else
             {
-                printf("-");
+                printf("\033[31m-\033[0m");
                 if (searchInFile(stageaddress, line) == 0)
                 {
-                    printf("M\n");
+                    printf("\033[33mM\033[0m\n");
                 }
                 else
                 {
@@ -848,4 +877,205 @@ void run_status(int argc, char *argv[])
         fclose(stageaddress);
         chdir(firstDirectory);
     }
+}
+void run_commit(int argc, char *argv[])
+{
+    if (argc != 4 || (strcmp(argv[2], "-m") != 0 && strcmp(argv[2], "-s") != 0 ))
+    {
+        printf("\033[31mplease enter a valid command\033\n[0m");
+    }
+    else
+    {
+        /// check stagehash is not empty
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *file = fopen("stageHASH.txt", "r");
+        char line[20];
+        fgets(line, sizeof(line), file);
+        fclose(file);
+        if (line[0] != '2')
+        {
+            printf("\033[31mnothing in stage\033\n[0m");
+        }
+        else
+        {
+            if (strlen(argv[3]) > 72)
+            {
+                printf("\033[31mthe message has more than 72 character\033\n[0m");
+            }
+            else
+            {
+                int HOW_MANY_FILE;
+                file = fopen("stageADDRESS.txt", "r");
+                HOW_MANY_FILE = how_many_differnt_line(file);
+                fclose(file);
+                /////
+                temp = getCurrentTime();
+                mkdir(temp);
+                move_file("stageHASH.txt", temp);
+                move_file("stageADDRESS.txt", temp);
+                file = fopen("stageHASH.txt", "w");
+                fclose(file);
+                file = fopen("stageADDRESS.txt", "w");
+                fclose(file);
+                file = fopen("COMMMIT.txt", "a");
+                fprintf(file, "%s\n", temp);
+                free(temp);
+                /////////////
+                FILE *branch = fopen("WHICHBRANCH.txt", "r");
+                fgets(line, sizeof(line), branch);
+                fprintf(file, "%s\n", line);
+                fclose(branch);
+                /////////////
+                temp = WHO_NAME();
+                fprintf(file, "%s\n", temp);
+                free(temp);
+                temp = WHO_EMAIL();
+                fprintf(file, "%s\n", temp);
+                free(temp);
+                fprintf(file,"%s\n",argv[3]);
+                fprintf(file,"%d\n",HOW_MANY_FILE);
+                fclose(file);
+            }
+        }
+        chdir(firstDirectory);
+    }
+}
+char *getCurrentTime()
+{
+    time_t current_time;
+    time(&current_time);
+    struct tm *time_info = localtime(&current_time);
+    char *time_str = (char *)malloc(30);
+    strftime(time_str, 30, "%Y%m%d%H%M%S", time_info);
+    return time_str;
+}
+void move_file(char *origin, char *destination)
+{
+    char *temp = (char *)malloc(100 * sizeof(char));
+    strcpy(temp, "move ");
+    strcat(temp, origin);
+    strcat(temp, " ");
+    strcat(temp, destination);
+    system(temp);
+    free(temp);
+}
+int how_many_differnt_line(FILE *file)
+{
+    int x = 0;
+    char line[50][100];
+    while (fgets(line[x], sizeof(line[x]), file) != NULL)
+    {
+        line[x][strlen(line[x]) - 1] = '\0';
+        x++;
+    }
+    int count = 0;
+    for (int i = 0; i < x; i++)
+    {
+        if (strcmp(line[i], "ADD") == 0)
+        {
+            continue;
+        }
+        else
+        {
+            int flag = 0;
+            for (int j = 0; j < i; j++)
+            {
+                if (strcmp(line[j], line[i]) == 0)
+                {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+char *WHO_NAME() ///////////remember to free
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+
+    char *output = (char *)malloc(50 * sizeof(char));
+    char line[50];
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    FILE *file = fopen("configN.txt", "r");
+    if (file == NULL)
+    {
+        fclose(file);
+        temp = where_is_global_information();
+        chdir(temp);
+        free(temp);
+        file = fopen("configNGLOB.txt", "r");
+        if (file == NULL)
+        {
+            strcpy(output, "NO username");
+            fclose(file);
+        }
+        else
+        {
+            fgets(line, sizeof(line), file);
+            strcpy(output, line);
+            fclose(file);
+        }
+    }
+    else
+    {
+        fgets(line, sizeof(line), file);
+        strcpy(output, line);
+        fclose(file);
+    }
+    chdir(firstDirectory);
+    return output;
+}
+char *WHO_EMAIL() ///////////remember to free
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+
+    char *output = (char *)malloc(50 * sizeof(char));
+    char line[50];
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    FILE *file = fopen("configE.txt", "r");
+    if (file == NULL)
+    {
+        fclose(file);
+        temp = where_is_global_information();
+        chdir(temp);
+        free(temp);
+        file = fopen("configEGLOB.txt", "r");
+        if (file == NULL)
+        {
+            strcpy(output, "NO useremail");
+            fclose(file);
+        }
+        else
+        {
+            fgets(line, sizeof(line), file);
+            strcpy(output, line);
+            fclose(file);
+        }
+    }
+    else
+    {
+        fgets(line, sizeof(line), file);
+        strcpy(output, line);
+        fclose(file);
+    }
+    chdir(firstDirectory);
+    return output;
 }
