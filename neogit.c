@@ -37,6 +37,7 @@ void run_replace(int argc, char *argv[]);
 void run_remove(int argc, char *argv[]);
 void run_log(int argc, char *argv[]);
 void reverseLines(char *, char *);
+void run_branch(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
@@ -88,6 +89,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "log") == 0)
     {
         run_log(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "branch") == 0)
+    {
+        run_branch(argc, argv);
     }
 
     return 0;
@@ -1267,7 +1272,7 @@ void run_remove(int argc, char *argv[])
             fclose(temp_file);
             system("del COMMITMSG.txt");
             rename("temp.txt", "COMMITMSG.txt");
-            printf("\033[32mthe shortcut successfully replace\033\n[0m");
+            printf("\033[32mthe shortcut successfully remove\033\n[0m");
         }
         chdir(firstDirectory);
     }
@@ -1549,7 +1554,7 @@ void run_log(int argc, char *argv[])
     }
     else
     {
-        printf("\033[32mthe shortcut successfully replace\033\n[0m");
+        printf("\033[31mplease enter a valid command\033[0m\n");
     }
     chdir(firstDirectory);
 }
@@ -1585,4 +1590,53 @@ void reverseLines(char *inputFileName, char *outputFileName)
     free(lines);
     fclose(inputFile);
     fclose(outputFile);
+}
+void run_branch(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *file = fopen("ALLBRANCHS.txt", "r");
+        char line[100];
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            printf("\033[36m%s\033[0m", line);
+        }
+        fclose(file);
+        chdir(firstDirectory);
+    }
+    else if (argc == 3)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+
+        FILE *file = fopen("ALLBRANCHS.txt", "r");
+        if (searchInFile(file, argv[2]) == 0)
+        {
+            printf("\033[31mthis branch is already exist\033[0m\n");
+            fclose(file);
+        }
+        else
+        {
+            fclose(file);
+            FILE *file = fopen("ALLBRANCHS.txt", "a");
+            fprintf(file, "%s\n", argv[2]);
+            fclose(file);
+            printf("\033[32mthe branch successfully create\033\n[0m");
+        }
+        chdir(firstDirectory);
+    }
+    else
+    {
+        printf("\033[31mplease enter a valid command\033[0m\n");
+    }
 }
