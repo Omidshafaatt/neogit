@@ -40,6 +40,7 @@ void reverseLines(char *, char *);
 void run_branch(int argc, char *argv[]);
 void run_checkout(int argc, char *argv[]);
 int HEAD_OR_NOT(char *);
+char *HEAD_HASH(int);
 
 int main(int argc, char *argv[])
 {
@@ -1661,13 +1662,110 @@ void run_branch(int argc, char *argv[])
 }
 void run_checkout(int argc, char *argv[])
 {
-    if (argc == 3 && strcmp(argv[2], "HEAD") == 0)
+    if (argc == 4 && strcmp(argv[2], "HEAD") == 0)
     {
-        /* code */
-    }
-    else if (argc == 4 && strcmp(argv[2], "HEAD") == 0 && strcmp(argv[3], "-n") == 0)
-    {
-        /* code */
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        char *HASH = HEAD_HASH(atoi(argv[3]));
+        char line0[20];
+        char line1[30];
+        char line2[50];
+        char line3[50];
+        char line4[75];
+        char line5[100];
+        // char save[20];
+        FILE *file = fopen("COMMIT.txt", "r");
+        while (fgets(line0, sizeof(line0), file) != NULL)
+        {
+            fgets(line1, sizeof(line1), file);
+            fgets(line2, sizeof(line2), file);
+            fgets(line3, sizeof(line3), file);
+            fgets(line4, sizeof(line4), file);
+            fgets(line5, sizeof(line5), file);
+            line0[strlen(line0) - 1] = '\0';
+            line1[strlen(line1) - 1] = '\0';
+            chdir(line0);
+            FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+            char address[100];
+            while (fgets(address, sizeof(address), stageaddress) != NULL)
+            {
+                address[strlen(address) - 1] = '\0';
+                if (strcmp(address, "ADD") == 0)
+                {
+                    continue;
+                }
+                char *temp = (char *)malloc(100 * sizeof(char));
+                strcpy(temp, "del ");
+                strcat(temp, address);
+                system(temp);
+                ///////////////////////////////////////////////////////////////
+                free(temp);
+            }
+            fclose(stageaddress);
+            chdir("..");
+        }
+        fclose(file);
+
+        file = fopen("COMMIT.txt", "r");
+        FILE *stagehash;
+        FILE *stageaddress;
+        while (fgets(line0, sizeof(line0), file) != NULL)
+        {
+            line0[strlen(line0) - 1] = '\0';
+            if (strcmp(line0, HASH) == 1)
+            {
+                break;
+            }
+            chdir(line0);
+            stagehash = fopen("stageHASH.txt", "r");
+            stageaddress = fopen("stageADDRESS.txt", "r");
+            char hash[20];
+            char address[100];
+            while (fgets(hash, sizeof(hash), stagehash) != NULL)
+            {
+                fgets(address, sizeof(address), stageaddress);
+                hash[strlen(hash) - 1] = '\0';
+                address[strlen(address) - 1] = '\0';
+                if (strcmp(hash, "ADD") == 0)
+                {
+                    continue;
+                }
+                char *temp = (char *)malloc(100 * sizeof(char));
+                strcpy(temp, "xcopy ..\\");
+                strcat(temp, hash);
+                strcat(temp, " ");
+                strcat(temp, address);
+                system(temp);
+                free(temp);
+            }
+            chdir("..");
+            fclose(stageaddress);
+            fclose(stagehash);
+            fgets(line0, sizeof(line0), file);
+            fgets(line0, sizeof(line0), file);
+            fgets(line0, sizeof(line0), file);
+            fgets(line0, sizeof(line0), file);
+            fgets(line0, sizeof(line0), file);
+        }
+        fclose(file);
+        if (HEAD_OR_NOT(HASH) == 0)
+        {
+            FILE *head = fopen("HEAD.txt", "w");
+            fprintf(head, "NO");
+            fclose(head);
+        }
+        else
+        {
+            FILE *head = fopen("HEAD.txt", "w");
+            fprintf(head, "YES");
+            fclose(head);
+        }
+        free(HASH);
+        chdir(firstDirectory);
     }
     else
     {
@@ -1899,6 +1997,7 @@ void run_checkout(int argc, char *argv[])
                 fgets(line0, sizeof(line0), file);
                 fgets(line0, sizeof(line0), file);
             }
+            fclose(file);
             if (HEAD_OR_NOT(argv[2]) == 0)
             {
                 FILE *head = fopen("HEAD.txt", "w");
@@ -1958,4 +2057,70 @@ int HEAD_OR_NOT(char *hash)
     }
     chdir(firstDirectory);
     return 1;
+}
+char *HEAD_HASH(int n) ////////////////////remember to free
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+
+    FILE *file = fopen("WHICHBRANCH.txt", "r");
+    char BRANCH[100];
+    fgets(BRANCH, sizeof(BRANCH), file);
+    fclose(file);
+    /////////////////////
+    file = fopen("COMMIT.txt", "r");
+    char line0[20];
+    char line1[30];
+    char line2[50];
+    char line3[50];
+    char line4[100];
+    char line5[10];
+    int count_branch = 0;
+    while (fgets(line0, sizeof(line0), file) != NULL)
+    {
+        fgets(line1, sizeof(line1), file);
+        fgets(line2, sizeof(line2), file);
+        fgets(line3, sizeof(line3), file);
+        fgets(line4, sizeof(line4), file);
+        fgets(line5, sizeof(line5), file);
+
+        line1[strlen(line1) - 1] = '\0';
+        if (strcmp(line1, BRANCH) == 0)
+        {
+            count_branch++;
+        }
+    }
+    fclose(file);
+    ////////////////////////
+    int count = 0;
+    file = fopen("COMMIT.txt", "r");
+    while (fgets(line0, sizeof(line0), file) != NULL)
+    {
+        fgets(line1, sizeof(line1), file);
+        fgets(line2, sizeof(line2), file);
+        fgets(line3, sizeof(line3), file);
+        fgets(line4, sizeof(line4), file);
+        fgets(line5, sizeof(line5), file);
+
+        line1[strlen(line1) - 1] = '\0';
+        if (strcmp(line1, BRANCH) == 0)
+        {
+            count++;
+        }
+        if (count == count_branch - n)
+        {
+            line0[strlen(line0) - 1] = '\0';
+            break;
+        }
+    }
+    fclose(file);
+    char *output = (char *)malloc(100 * sizeof(char));
+    strcpy(output, line0);
+    chdir(firstDirectory);
+
+    return output;
 }
