@@ -42,6 +42,7 @@ void run_checkout(int argc, char *argv[]);
 int HEAD_OR_NOT(char *);
 char *HEAD_HASH(int);
 void run_tag(int argc, char *argv[]);
+int *organize(char **, int);
 
 int main(int argc, char *argv[])
 {
@@ -2144,11 +2145,73 @@ void run_tag(int argc, char *argv[])
 {
     if (argc == 2)
     {
-        /* code */
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+
+        FILE *file = fopen("TAG.txt", "r");
+        char line[50];
+        int n = 0;
+        char **save = (char **)malloc(10 * sizeof(char *));
+        for (int i = 0; i < 10; i++)
+        {
+            save[i] = (char *)malloc(30 * sizeof(char));
+        }
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            strcpy(save[n], line);
+            n++;
+            fgets(line, sizeof(line), file);
+            fgets(line, sizeof(line), file);
+            fgets(line, sizeof(line), file);
+            fgets(line, sizeof(line), file);
+            fgets(line, sizeof(line), file);
+        }
+        fclose(file);
+        int *which_line = organize(save, n);
+        char line0[30];
+        char line1[20];
+        char line2[100];
+        char line3[30];
+        char line4[40];
+        char line5[20];
+        int K;
+        for (int i = 0; i < n; i++)
+        {
+            file = fopen("TAG.txt", "r");
+            K = 0;
+            while (fgets(line0, sizeof(line0), file) != NULL)
+            {
+                fgets(line1, sizeof(line1), file);
+                fgets(line2, sizeof(line2), file);
+                fgets(line3, sizeof(line3), file);
+                fgets(line4, sizeof(line4), file);
+                fgets(line5, sizeof(line5), file);
+                if (which_line[i] == K)
+                {
+                    printf("%s", line0);
+                    printf("%s", line1);
+                    printf("%s", line2);
+                    printf("%s", line3);
+                    printf("%s", line4);
+                    printf("%s", line5);
+                    break;
+                }
+                K++;
+            }
+            fclose(file);
+        }
+        free(save);
+        free(which_line);
+        chdir(firstDirectory);
     }
     else if (argc == 4 && strcmp(argv[2], "show") == 0)
     {
-        /* code */
+        
     }
     else if (strcmp(argv[2], "-a") == 0)
     {
@@ -2265,4 +2328,29 @@ void run_tag(int argc, char *argv[])
 
         chdir(firstDirectory);
     }
+    else
+    {
+        printf("\033[31mplease enter a valid command\033[0m\n");
+    }
+}
+int *organize(char **input,int n)
+{
+    int *output = (int *)malloc(20 *sizeof(int));
+
+    for (int i = 0; i < n; i++)
+    {
+        output[i] = i;
+    }
+    for (int i = n - 1; i >= 0; i--)
+    {
+        for (int j = n - 1; j > i; j--)
+        {
+            if (strcmp(input[j],input[j - 1]) == -1)
+            {
+                output[j - 1] = j;
+                output[j] = j - 1;
+            }
+        }
+    }
+    return output;
 }
