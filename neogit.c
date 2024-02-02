@@ -43,6 +43,11 @@ int HEAD_OR_NOT(char *);
 char *HEAD_HASH(int);
 void run_tag(int argc, char *argv[]);
 int *organize(char **, int);
+void run_diff(int argc, char *argv[]);
+void diff(char *, int, int, char *, int, int);
+int file_line_count(char *);
+int ADD_COUNT(char *);
+int check_NULL_space(char *);
 
 int main(int argc, char *argv[])
 {
@@ -106,6 +111,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "tag") == 0)
     {
         run_tag(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "diff") == 0)
+    {
+        run_diff(argc, argv);
     }
 
     return 0;
@@ -2389,4 +2398,318 @@ int *organize(char **input, int n)
         }
     }
     return output;
+}
+void run_diff(int argc, char *argv[])
+{
+    if (argc == 5 && strcmp(argv[2], "-f") == 0)
+    {
+        int x = file_line_count(argv[3]);
+        int y = file_line_count(argv[4]);
+        diff(argv[3], 1, x, argv[4], 1, y); //////?
+    }
+    else if (argc == 11 && strcmp(argv[2], "-f") == 0 && strcmp(argv[5], "-line1") == 0 && strcmp(argv[8], "-line2") == 0)
+    {
+        int x = atoi(argv[7]);
+        int y = atoi(argv[10]);
+        //printf("%d",x);
+        if (file_line_count(argv[3]) < x)
+        {
+            x = file_line_count(argv[3]);
+        }
+        if (file_line_count(argv[4]) < y)
+        {
+            y = file_line_count(argv[4]);
+        }
+        diff(argv[3], atoi(argv[6]), x, argv[4], atoi(argv[9]), y);
+    }
+    else if (argc == 5 && strcmp(argv[2], "-c") == 0)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        chdir(argv[3]);
+        char **save1_hash = (char **)malloc(10 * sizeof(char));
+        for (int i = 0; i < 10; i++)
+        {
+            *(save1_hash + i) = (char *)malloc(20 * sizeof(char));
+        }
+        char **save1_address = (char **)malloc(10 * sizeof(char));
+        for (int i = 0; i < 10; i++)
+        {
+            *(save1_address + i) = (char *)malloc(50 * sizeof(char));
+        }
+        //////////////////
+        char line[20];
+        char line1[50];
+        int x = ADD_COUNT("stageHASH.txt");
+        FILE *stagehash = fopen("stageHASH.txt", "r");
+        FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+        int count = 0;
+        int i = 0;
+        int X;
+        while (fgets(line, sizeof(line), stagehash) != NULL)
+        {
+            fgets(line1, sizeof(line1), stageaddress);
+            line[strlen(line) - 1] = '\0';
+            line1[strlen(line1) - 1] = '\0';
+            if (strcmp(line, "ADD") == 0)
+            {
+                count++;
+                continue;
+            }
+            if (count == x - 1)
+            {
+                strcpy(*(save1_hash + i), line);
+                strcpy(*(save1_address + i), line1);
+                i++;
+            }
+        }
+        X = i;
+        fclose(stagehash);
+        fclose(stageaddress);
+        ////////////
+        chdir("..");
+        chdir(argv[4]);
+        char **save2_hash = (char **)malloc(10 * sizeof(char));
+        for (int i = 0; i < 10; i++)
+        {
+            *(save2_hash + i) = (char *)malloc(20 * sizeof(char));
+        }
+        char **save2_address = (char **)malloc(10 * sizeof(char));
+        for (int i = 0; i < 10; i++)
+        {
+            *(save2_address + i) = (char *)malloc(50 * sizeof(char));
+        }
+        //////////////////
+        x = ADD_COUNT("stageHASH.txt");
+        stagehash = fopen("stageHASH.txt", "r");
+        stageaddress = fopen("stageADDRESS.txt", "r");
+        count = 0;
+        i = 0;
+        int Y;
+        while (fgets(line, sizeof(line), stagehash) != NULL)
+        {
+            fgets(line1, sizeof(line1), stageaddress);
+            line[strlen(line) - 1] = '\0';
+            line1[strlen(line1) - 1] = '\0';
+            if (strcmp(line, "ADD") == 0)
+            {
+                count++;
+                continue;
+            }
+            if (count == x - 1)
+            {
+                strcpy(*(save2_hash + i), line);
+                strcpy(*(save2_address + i), line1);
+                i++;
+            }
+        }
+        Y = i;
+        fclose(stagehash);
+        fclose(stageaddress);
+        //////////
+        chdir("..");
+        //////////////////////////////////////////
+        for (int i = 0; i < X; i++)
+        {
+            int flag = 0;
+            for (int j = 0; j < Y; j++)
+            {
+                if (strcmp(*(save1_address + i), *(save2_address + j)) == 0)
+                {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+            {
+                printf("\033[32m%s\n\033[0m", *(save1_address + i));
+                **(save1_hash + i) = '\0';
+            }
+        }
+        ////////////////////
+        for (int i = 0; i < Y; i++)
+        {
+            int flag = 0;
+            for (int j = 0; j < X; j++)
+            {
+                if (strcmp(*(save2_address + i), *(save1_address + j)) == 0)
+                {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+            {
+                printf("\033[36m%s\n\033[0m", *(save2_address + i));
+                **(save2_hash + i) = '\0';
+            }
+        }
+        /////////////////////////////////////////
+        for (int i = 0; i < X; i++)
+        {
+            if (**(save1_hash + i) != '\0' && **(save2_hash + i) != '\0')
+            {
+                char temp[20];
+                int A;
+                for (int j = strlen(*(save1_address + i)) - 1; j >= 0; j--)
+                {
+                    if (*(*(save1_address + i) + j) == '\\')
+                    {
+                        A = j;
+                        break;
+                    }
+                }
+                for (int k = A; k < strlen(*(save1_address + i)); k++)
+                {
+                    temp[k - A] = *(*(save1_address + i) + k);
+                    if (k == strlen(*(save1_address + i)) - 1)
+                    {
+                        temp[k - A + 1] = '\0';
+                    }
+                }
+                char first[40];
+                strcpy(first, *(save1_hash + i));
+                strcat(first, temp);
+                ////////////////////////////
+                for (int j = strlen(*(save2_address + i)) - 1; j >= 0; j--)
+                {
+                    if (*(*(save2_address + i) + j) == '\\')
+                    {
+                        A = j;
+                        break;
+                    }
+                }
+                for (int k = A; k < strlen(*(save2_address + i)); k++)
+                {
+                    temp[k - A] = *(*(save2_address + i) + k);
+                    if (k == strlen(*(save2_address + i)) - 1)
+                    {
+                        temp[k - A + 1] = '\0';
+                    }
+                }
+                char second[40];
+                strcpy(second, *(save1_hash + i));
+                strcat(second, temp);
+                ///////////////////
+                int XXX = file_line_count(first);
+                int YYY = file_line_count(second);
+                diff(first, 1, XXX, second, 1, YYY);
+            }
+        }
+
+        chdir(firstDirectory);
+    }
+    else
+    {
+        printf("\033[31mplease enter a valid command\033[0m\n");
+    }
+}
+int file_line_count(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    if (file == NULL)
+    {
+        printf("\033[31mthere is no file with given name\033[0m\n");
+    }
+    char line[200];
+    int line_counter = 0;
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        line_counter++;
+    }
+    return line_counter;
+}
+int ADD_COUNT(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    char line[100];
+    int count = 0;
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        line[strlen(line) - 1] = '\0';
+        if (strcmp(line, "ADD") == 0)
+        {
+            count++;
+        }
+    }
+    fclose(file);
+    return count;
+}
+void diff(char *file1, int file1_begin, int file1_end, char *file2, int file2_begin, int file2_end)
+{
+    FILE *file_1 = fopen(file1, "r");
+    FILE *file_2 = fopen(file2, "r");
+    char line1[100];
+    char line2[100];
+
+    for (int i = 0; i < file1_begin; i++)
+    {
+        fgets(line1, sizeof(line1), file_1);
+    }
+    for (int i = 0; i < file2_begin; i++)
+    {
+        fgets(line2, sizeof(line2), file_2);
+    }
+    int X = file1_begin;
+    int Y = file2_begin;
+    for (int i = file1_begin + file2_begin; i < file1_end + file2_end; i++)
+    {
+        //for (int j = file2_begin; j < file2_end; j++)
+        //{
+            //if (X == file1_end || Y == file2_end)
+            //{
+            //    break;
+            //}
+            //line1[strlen(line1) - 1] = '\0';
+            //line2[strlen(line2) - 1] = '\0';
+            if (check_NULL_space(line1) == 1 && check_NULL_space(line2) == 0)
+            {
+                fgets(line2, sizeof(line2), file_2);
+                Y++;
+            }
+            else if (check_NULL_space(line1) == 0 && check_NULL_space(line2) == 1)
+            {
+                fgets(line1, sizeof(line1), file_1);
+                X++;
+            }
+            else if (check_NULL_space(line1) == 0 && check_NULL_space(line2) == 0)
+            {
+                fgets(line1, sizeof(line1), file_1);
+                X++;
+                fgets(line2, sizeof(line2), file_2);
+                Y++;
+            }
+            else if (check_NULL_space(line1) == 1 && check_NULL_space(line2) == 1)
+            {
+                if (strcmp(line1, line2) != 0)
+                {
+                    printf("\033[32m%s - %d\n%s\n\033[0m", file1, X, line1);
+                    printf("\033[36m%s - %d\n%s\n--------------------\n\033[0m", file2, Y, line2);
+                    fgets(line1, sizeof(line1), file_1);
+                    X++;
+                    fgets(line2, sizeof(line2), file_2);
+                    Y++;
+                }
+            }
+        //}
+        //if (X == file1_end || Y == file2_end)
+        //{
+        //    break;
+        //}
+    }
+}
+int check_NULL_space(char *input)
+{
+    for (int i = 0; i < strlen(input); i++)
+    {
+        if (input[i] != '\n' && input[i] != ' ' && input[i] != '\t')
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
