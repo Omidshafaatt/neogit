@@ -2193,12 +2193,12 @@ void run_tag(int argc, char *argv[])
                 fgets(line5, sizeof(line5), file);
                 if (which_line[i] == K)
                 {
-                    printf("%s", line0);
-                    printf("%s", line1);
-                    printf("%s", line2);
-                    printf("%s", line3);
-                    printf("%s", line4);
-                    printf("%s", line5);
+                    printf("\033[36mTag name : \033[33m%s", line0);
+                    printf("\033[36mCommit hash : \033[32m%s", line1);
+                    printf("\033[36mTag message : \033[32m%s", line2);
+                    printf("\033[36mName : \033[32m%s", line3);
+                    printf("\033[36mGmail : \033[32m%s", line4);
+                    printf("\033[36mTime : \033[32mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n\n[0m", line5[0], line5[1], line5[2], line5[3], line5[4], line5[5], line5[6], line5[7], line5[8], line5[9], line5[10], line5[11], line5[12], line5[13]);
                     break;
                 }
                 K++;
@@ -2211,7 +2211,43 @@ void run_tag(int argc, char *argv[])
     }
     else if (argc == 4 && strcmp(argv[2], "show") == 0)
     {
-        
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+
+        FILE *file = fopen("TAG.txt", "r");
+
+        char line0[30];
+        char line1[20];
+        char line2[100];
+        char line3[30];
+        char line4[40];
+        char line5[20];
+
+        while (fgets(line0, sizeof(line0), file) != NULL)
+        {
+            line0[strlen(line0) - 1] = '\0';
+            fgets(line1, sizeof(line1), file);
+            fgets(line2, sizeof(line2), file);
+            fgets(line3, sizeof(line3), file);
+            fgets(line4, sizeof(line4), file);
+            fgets(line5, sizeof(line5), file);
+            if (strcmp(line0, argv[3]) == 0)
+            {
+                printf("\033[36mTag name : \033[33m%s\n", line0);
+                printf("\033[36mCommit hash : \033[32m%s", line1);
+                printf("\033[36mTag message : \033[32m%s", line2);
+                printf("\033[36mName : \033[32m%s", line3);
+                printf("\033[36mGmail : \033[32m%s", line4);
+                printf("\033[36mTime : \033[32mY:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n\n[0m", line5[0], line5[1], line5[2], line5[3], line5[4], line5[5], line5[6], line5[7], line5[8], line5[9], line5[10], line5[11], line5[12], line5[13]);
+                break;
+            }
+        }
+
+        chdir(firstDirectory);
     }
     else if (strcmp(argv[2], "-a") == 0)
     {
@@ -2333,9 +2369,9 @@ void run_tag(int argc, char *argv[])
         printf("\033[31mplease enter a valid command\033[0m\n");
     }
 }
-int *organize(char **input,int n)
+int *organize(char **input, int n)
 {
-    int *output = (int *)malloc(20 *sizeof(int));
+    int *output = (int *)malloc(20 * sizeof(int));
 
     for (int i = 0; i < n; i++)
     {
@@ -2345,7 +2381,7 @@ int *organize(char **input,int n)
     {
         for (int j = n - 1; j > i; j--)
         {
-            if (strcmp(input[j],input[j - 1]) == -1)
+            if (strcmp(input[j], input[j - 1]) == -1)
             {
                 output[j - 1] = j;
                 output[j] = j - 1;
