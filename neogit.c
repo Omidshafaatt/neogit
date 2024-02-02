@@ -41,6 +41,7 @@ void run_branch(int argc, char *argv[]);
 void run_checkout(int argc, char *argv[]);
 int HEAD_OR_NOT(char *);
 char *HEAD_HASH(int);
+void run_tag(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
@@ -100,6 +101,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "checkout") == 0)
     {
         run_checkout(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "tag") == 0)
+    {
+        run_tag(argc, argv);
     }
 
     return 0;
@@ -395,7 +400,7 @@ void run_add(int argc, char *argv[])
                 FILE *stage = fopen("stageHASH.txt", "r");
                 line[strlen(line) - 1] = '\0';
                 temp = modification_time(line);
-                if (searchInFile(stage, temp) == 0)
+                if (searchInFile(stage, temp) != 0)
                 {
                     printf("\033[32m%s is already in stage\033[0m\n", line);
                 }
@@ -622,15 +627,17 @@ void listFilesRecursively_depth(char *basePath, FILE *file, int n)
 int searchInFile(FILE *file, char *targetString) // remember to fclose file
 {
     char line[256];
+    int lineCount = 1;
     while (fgets(line, sizeof(line), file) != NULL)
     {
         line[strlen(line) - 1] = '\0';
         if (strcmp(line, targetString) == 0)
         {
-            return 0;
+            return lineCount;
         }
+        lineCount++;
     }
-    return 1;
+    return 0;
 }
 void copy_folder(char *origin, char *destination)
 {
@@ -877,14 +884,14 @@ void run_status(int argc, char *argv[])
             FILE *stagehash = fopen("stageHASH.txt", "r");
             FILE *stageaddress = fopen("stageADDRESS.txt", "r");
             temp = modification_time(line);
-            if (searchInFile(stagehash, temp) == 0)
+            if (searchInFile(stagehash, temp) != 0)
             {
                 printf("\033[32m+\033[0m\n");
             }
             else
             {
                 printf("\033[31m-\033[0m");
-                if (searchInFile(stageaddress, line) == 0)
+                if (searchInFile(stageaddress, line) != 0)
                 {
                     printf("\033[33mM\033[0m\n");
                 }
@@ -989,6 +996,9 @@ void run_commit(int argc, char *argv[])
                     printf("\033[32mID : %s\033\n[0m", temp);
                     printf("\033[32mTIME : Y:%c%c%c%c M:%c%c D:%c%c H:%c%c m:%c%c S:%c%c\033\n[0m", temp[0], temp[1], temp[2], temp[3], temp[4], temp[5], temp[6], temp[7], temp[8], temp[9], temp[10], temp[11], temp[12], temp[13]);
                     printf("\033[32mMESSAGE : %s\033\n[0m", argv[3]);
+                    FILE *change_commit = fopen("NOW.txt", "w");
+                    fprintf(change_commit, "%s", temp);
+                    fclose(change_commit);
                     free(temp);
                     /////////////
                     FILE *branch = fopen("WHICHBRANCH.txt", "r");
@@ -1392,7 +1402,7 @@ void run_log(int argc, char *argv[])
     else if (argc == 4 && strcmp(argv[2], "-branch") == 0)
     {
         FILE *file = fopen("ALLBRANCHS.txt", "r");
-        if (searchInFile(file, argv[3]) == 1)
+        if (searchInFile(file, argv[3]) == 0)
         {
             printf("\033[31mthere is no branch with given name\033[0m\n");
             fclose(file);
@@ -1640,7 +1650,7 @@ void run_branch(int argc, char *argv[])
         free(temp);
 
         FILE *file = fopen("ALLBRANCHS.txt", "r");
-        if (searchInFile(file, argv[2]) == 0)
+        if (searchInFile(file, argv[2]) != 0)
         {
             printf("\033[31mthis branch is already exist\033[0m\n");
             fclose(file);
@@ -1787,7 +1797,7 @@ void run_checkout(int argc, char *argv[])
             /////////////////////////////////////////////////////
             fclose(file);
             FILE *allbranchs = fopen("ALLBRANCHS.txt", "r");
-            if (searchInFile(allbranchs, argv[2]) == 1)
+            if (searchInFile(allbranchs, argv[2]) == 0)
             {
                 printf("\033[31mthere is no branch with given name\033[0m\n");
                 fclose(allbranchs);
@@ -1796,7 +1806,7 @@ void run_checkout(int argc, char *argv[])
             {
                 fclose(allbranchs);
                 FILE *commit = fopen("COMMIT.txt", "r");
-                if (searchInFile(commit, argv[2]) == 1)
+                if (searchInFile(commit, argv[2]) == 0)
                 {
                     FILE *change_branch = fopen("WHICHBRANCH.txt", "w");
                     fprintf(change_branch, "%s", argv[2]);
@@ -1906,6 +1916,9 @@ void run_checkout(int argc, char *argv[])
                     FILE *change_branch = fopen("WHICHBRANCH.txt", "w");
                     fprintf(change_branch, "%s", argv[2]);
                     fclose(change_branch);
+                    FILE *change_commit = fopen("NOW.txt", "w");
+                    fprintf(change_commit, "%s", save);
+                    fclose(change_commit);
                 }
                 printf("\033[32msuccessfully checkout\033\n[0m");
             }
@@ -2013,6 +2026,9 @@ void run_checkout(int argc, char *argv[])
             FILE *change_branch = fopen("WHICHBRANCH.txt", "w");
             fprintf(change_branch, "%s", save);
             fclose(change_branch);
+            FILE *change_commit = fopen("NOW.txt", "w");
+            fprintf(change_commit, "%s", argv[2]);
+            fclose(change_commit);
             printf("\033[32msuccessfully checkout\033\n[0m");
         }
         chdir(firstDirectory);
@@ -2123,4 +2139,130 @@ char *HEAD_HASH(int n) ////////////////////remember to free
     chdir(firstDirectory);
 
     return output;
+}
+void run_tag(int argc, char *argv[])
+{
+    if (argc == 2)
+    {
+        /* code */
+    }
+    else if (argc == 4 && strcmp(argv[2], "show") == 0)
+    {
+        /* code */
+    }
+    else if (strcmp(argv[2], "-a") == 0)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+        FILE *file = fopen("TAG.txt", "r");
+        int WHICH_LINE = searchInFile(file, argv[3]);
+        fclose(file);
+        if (WHICH_LINE != 0)
+        {
+            int flag = 0;
+            for (int i = 0; i < argc; i++)
+            {
+                if (strcmp(argv[i], "-f") == 0)
+                {
+                    file = fopen("TAG.txt", "r");
+                    removeLineFromFile(file, WHICH_LINE, "temp.txt");
+                    fclose(file);
+                    file = fopen("TAG.txt", "r");
+                    removeLineFromFile(file, WHICH_LINE + 1, "temp.txt");
+                    fclose(file);
+                    file = fopen("TAG.txt", "r");
+                    removeLineFromFile(file, WHICH_LINE + 2, "temp.txt");
+                    fclose(file);
+                    file = fopen("TAG.txt", "r");
+                    removeLineFromFile(file, WHICH_LINE + 3, "temp.txt");
+                    fclose(file);
+                    file = fopen("TAG.txt", "r");
+                    removeLineFromFile(file, WHICH_LINE + 4, "temp.txt");
+                    fclose(file);
+                    file = fopen("TAG.txt", "r");
+                    removeLineFromFile(file, WHICH_LINE + 5, "temp.txt");
+                    fclose(file);
+                    system("del TAG.txt");
+                    rename("temp.txt", "TAG.txt");
+                    file = fopen("TAG.txt", "a");
+                    fprintf(file, "%s\n", argv[3]);
+                    fclose(file);
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+            {
+                printf("\033[31mthe tag is already exist. use -f to overwrite\033[0m\n");
+                return;
+            }
+        }
+        else
+        {
+            file = fopen("TAG.txt", "a");
+            fprintf(file, "%s\n", argv[3]);
+            fclose(file);
+        }
+        int flag = 0;
+        for (int i = 0; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-c") == 0)
+            {
+                file = fopen("TAG.txt", "a");
+                fprintf(file, "%s\n", argv[i + 1]);
+                fclose(file);
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            file = fopen("NOW.txt", "r");
+            char line[20];
+            fgets(line, sizeof(line), file);
+            fclose(file);
+            file = fopen("TAG.txt", "a");
+            fprintf(file, "%s\n", line);
+            fclose(file);
+        }
+        flag = 0;
+        for (int i = 0; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-m") == 0)
+            {
+                file = fopen("TAG.txt", "a");
+                fprintf(file, "%s\n", argv[i + 1]);
+                fclose(file);
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            file = fopen("TAG.txt", "a");
+            fprintf(file, "NO\n");
+            fclose(file);
+        }
+        char *name = WHO_NAME();
+        char *email = WHO_EMAIL();
+        file = fopen("TAG.txt", "a");
+        fprintf(file, "%s\n", name);
+        fclose(file);
+        free(name);
+        file = fopen("TAG.txt", "a");
+        fprintf(file, "%s\n", email);
+        fclose(file);
+        free(email);
+        char *time = getCurrentTime();
+        file = fopen("TAG.txt", "a");
+        fprintf(file, "%s\n", time);
+        fclose(file);
+        free(time);
+
+        chdir(firstDirectory);
+    }
 }
