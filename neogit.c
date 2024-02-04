@@ -54,6 +54,11 @@ void all_stage();
 int check_invalid_alias(char *);
 int run_alias(int argc, char *argv[]);
 void reverseString(char str[]);
+void run_precommit(int argc, char *argv[]);
+int todo_check(char *);
+char *what_is_file_format(char *);
+int eof_blank_space(char *);
+int format_check(char *);
 
 int main(int argc, char *argv[])
 {
@@ -129,6 +134,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "merge") == 0)
     {
         run_merge(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "pre-commit") == 0)
+    {
+        run_precommit(argc, argv);
     }
 
     return 0;
@@ -3056,4 +3065,151 @@ void reverseString(char str[])
         start++;
         end--;
     }
+}
+void run_precommit(int argc, char *argv[])
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+
+    if (argc == 4 && strcmp(argv[2], "hooks") == 0 && strcmp(argv[3], "list") == 0)
+    {
+        printf("\033[36mhook-id\n--------------\n\033[0m");
+        printf("\033[33mtodo-check\n");
+        printf("eof-blank-space\n");
+        printf("format-check\n");
+        printf("balance-braces\n");
+        printf("indentation-check\n");
+        printf("static-error-check\n");
+        printf("file-size-check\n");
+        printf("character-limit\n");
+        printf("time-limit\n\033[0m");
+    }
+    else if (argc == 4 && strcmp(argv[2], "applied") == 0 && strcmp(argv[3], "hooks") == 0)
+    {
+        FILE *file = fopen("appliedhooks.txt", "r");
+        char line[30];
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            printf("%s", line);
+        }
+        fclose(file);
+    }
+    else if (argc == 5 && strcmp(argv[2], "add") == 0 && strcmp(argv[3], "hook") == 0)
+    {
+        FILE *file = fopen("appliedhooks.txt", "a");
+        fprintf("%s\n", argv[4]);
+        fclose(file);
+    }
+    else if (argc == 5 && strcmp(argv[2], "remove") == 0 && strcmp(argv[3], "hook") == 0)
+    {
+        FILE *file = fopen("appliedhooks.txt", "r");
+        FILE *temp = fopen("temp.txt", "w");
+        char line[100];
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            if (strcmp(line, argv[4]) == 0)
+            {
+                continue;
+            }
+            fprintf(temp, "%s\n", argv[4]);
+        }
+        fclose(file);
+        fclose(temp);
+        system("del appliedhooks.txt");
+        rename("temp.txt", "appliedhooks.txt");
+    }
+    // all_stage();
+    chdir(firstDirectory);
+}
+char *what_is_file_format(char *file_path)
+{
+    char *format = (char *)malloc(50 * sizeof(char));
+
+    for (int i = strlen(file_path) - 1; i >= 0; i--)
+    {
+        if (file_path[i] == '.')
+        {
+            format[i + 1 - strlen(file_path)] = '\0';
+            break;
+        }
+        format[i + 1 - strlen(file_path)] = file_path[i];
+    }
+    reverseString(format);
+    return format;
+}
+int todo_check(char *file_path)
+{
+    if (strcmp(what_is_file_format(file_path), "c") != 0 && strcmp(what_is_file_format(file_path), "cpp") != 0 && strcmp(what_is_file_format(file_path), "txt") != 0)
+    {
+        return 0;
+    }
+    else
+    {
+        char line[256];
+        FILE *file = fopen(file_path, "r");
+        int flag = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            for (int i = 0; i < strlen(line); i++)
+            {
+                if (line[0] == ' ' && line[1] == 'T' && line[2] == 'O' && line[3] == 'D' && line[4] == 'O')
+                {
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 1)
+            {
+                return -1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            return 1;
+        }
+    }
+}
+int eof_blank_space(char *file_path)
+{
+    if (strcmp(what_is_file_format(file_path), "c") != 0 && strcmp(what_is_file_format(file_path), "cpp") != 0 && strcmp(what_is_file_format(file_path), "txt") != 0)
+    {
+        return 0;
+    }
+    else
+    {
+        char line[256];
+        FILE *file = fopen(file_path, "r");
+        int flag;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            if (check_NULL_space(line) == 1)
+            {
+                flag = 1;
+            }
+            else
+            {
+                flag = 0;
+            }
+        }
+        if (flag == 1)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+}
+int format_check(char *file_path)
+{
+
 }
