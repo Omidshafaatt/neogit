@@ -48,9 +48,19 @@ void diff(char *, int, int, char *, int, int);
 int file_line_count(char *);
 int ADD_COUNT(char *);
 int check_NULL_space(char *);
+void run_merge(int argc, char *argv[]);
+char *branch_head_hash(char *);
+void all_stage();
+int check_invalid_alias(char *);
+int run_alias(int argc, char *argv[]);
+void reverseString(char str[]);
 
 int main(int argc, char *argv[])
 {
+    if (run_alias(argc, argv) == 1)
+    {
+        return 0;
+    }
     if (argc < 2)
     {
         fprintf(stdout, "please enter a valid command");
@@ -116,6 +126,10 @@ int main(int argc, char *argv[])
     {
         run_diff(argc, argv);
     }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "merge") == 0)
+    {
+        run_merge(argc, argv);
+    }
 
     return 0;
 }
@@ -138,7 +152,7 @@ void run_init(int argc, char *argv[])
             stat(entry->d_name, &file_info);
             if (S_ISDIR(file_info.st_mode) && strcmp(entry->d_name, ".neogit") == 0)
             {
-                printf("neogit repository has already initialized in %s\n", currentDirectory);
+                printf("\033[31mneogit repository has already initialized in %s\n\033[0m", currentDirectory);
                 neogit_exists = 1;
                 break;
             }
@@ -232,13 +246,13 @@ void run_config(int argc, char *argv[])
 {
     if (argc == 2)
     {
-        printf("please enter a valid command\n");
+        printf("\033[31mplease enter a valid command\n\033[0m");
     }
     else if (strcmp(argv[2], "--global") == 0)
     {
         if (argc != 5)
         {
-            printf("please enter a valid command\n");
+            printf("\033[31mplease enter a valid command\n\033[0m");
         }
         else if (strcmp(argv[3], "user.name") == 0)
         {
@@ -257,6 +271,7 @@ void run_config(int argc, char *argv[])
             system("del configN.txt");
             free(temp);
             chdir(firstDirectory);
+            printf("\033[32msuccessfully\n\033[0m");
         }
         else if (strcmp(argv[3], "user.email") == 0)
         {
@@ -275,10 +290,38 @@ void run_config(int argc, char *argv[])
             system("del configE.txt");
             free(temp);
             chdir(firstDirectory);
+            printf("\033[32msuccessfully\n\033[0m");
+        }
+        else if (argv[3][0] == 'a' && argv[3][1] == 'l' && argv[3][2] == 'i' && argv[3][3] == 'a' && argv[3][4] == 's' && argv[3][5] == '.')
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            char *temp = where_is_global_information();
+            chdir(temp);
+            if (check_invalid_alias(argv[4]) == 0)
+            {
+                printf("\033[31mthe command alias is invalid\n\033[0m");
+            }
+            else
+            {
+                char alias[30];
+                for (int i = 0; i < strlen(argv[3]) - 6; i++)
+                {
+                    alias[i] = argv[3][i + 6];
+                }
+                alias[strlen(argv[3]) - 6] = '\0';
+                FILE *file = fopen("aliasGLOB.txt", "a");
+                fprintf(file, "%s\n", alias);
+                fprintf(file, "%s\n", argv[4]);
+                fclose(file);
+                printf("\033[32msuccessfully\n\033[0m");
+            }
+            free(temp);
+            chdir(firstDirectory);
         }
         else
         {
-            printf("please enter a valid command\n");
+            printf("\033[31mplease enter a valid command\n\033[0m");
         }
     }
     else
@@ -310,6 +353,34 @@ void run_config(int argc, char *argv[])
             FILE *file = fopen("configE.txt", "w");
             fprintf(file, "%s", argv[3]);
             fclose(file);
+            free(temp);
+            chdir(firstDirectory);
+        }
+        else if (argv[2][0] == 'a' && argv[2][1] == 'l' && argv[2][2] == 'i' && argv[2][3] == 'a' && argv[2][4] == 's' && argv[2][5] == '.')
+        {
+            char firstDirectory[FILENAME_MAX];
+            getcwd(firstDirectory, sizeof(firstDirectory));
+            char *temp = where_is_neogit();
+            chdir(temp);
+            chdir(".neogit");
+            if (check_invalid_alias(argv[3]) == 0)
+            {
+                printf("\033[31mthe command alias is invalid\n\033[0m");
+            }
+            else
+            {
+                char alias[30];
+                for (int i = 0; i < strlen(argv[2]) - 6; i++)
+                {
+                    alias[i] = argv[2][i + 6];
+                }
+                alias[strlen(argv[2]) - 6] = '\0';
+                FILE *file = fopen("alias.txt", "a");
+                fprintf(file, "%s\n", alias);
+                fprintf(file, "%s\n", argv[3]);
+                fclose(file);
+                printf("\033[32msuccessfully\n\033[0m");
+            }
             free(temp);
             chdir(firstDirectory);
         }
@@ -795,7 +866,7 @@ void reset_for_absolute_address(char *input)
     else
     {
         fclose(file_check);
-        FILE *stage = fopen("stageHASH.txt", "r");
+        /*FILE *stage = fopen("stageHASH.txt", "r");
         char line[20];
         int HOW_MANY_ADD = 0;
         while (fgets(line, sizeof(line), stage) != NULL)
@@ -806,21 +877,37 @@ void reset_for_absolute_address(char *input)
                 HOW_MANY_ADD++;
             }
         }
-        fclose(stage);
+        fclose(stage);*/
         FILE *stagehash = fopen("stageHASH.txt", "r");
         FILE *stageaddress = fopen("stageADDRESS.txt", "r");
         char line1[100];
-        int flag = 0;
-        int WHICH_LINE = 1;
-        char *temp = modification_time(input);
-        while (fgets(line1, sizeof(line1), stagehash) != NULL)
+        char line[20];
+        // int flag = 0;
+        // int WHICH_LINE = 1;
+        // char *temp = modification_time(input);
+        FILE *newstagehash = fopen("stageHASH1.txt", "a");
+        FILE *newstageaddress = fopen("stageADDRESS1.txt", "a");
+        while (fgets(line1, sizeof(line1), stageaddress) != NULL)
         {
+            fgets(line, sizeof(line), stagehash);
             line1[strlen(line1) - 1] = '\0';
-            if (strcmp(line1, "ADD") == 0)
+            line[strlen(line) - 1] = '\0';
+            if (strcmp(input, line1) == 0)
+            {
+                char *temp_rmdir = (char *)malloc(100 * sizeof(char));
+                strcpy(temp_rmdir, "rmdir /s ");
+                strcat(temp_rmdir, line);
+                system(temp_rmdir);
+                free(temp_rmdir);
+                continue;
+            }
+            fprintf(newstageaddress, "%s\n", line1);
+            fprintf(newstagehash, "%s\n", line);
+            /*if (strcmp(line1, "ADD") == 0)
             {
                 flag++;
-            }
-            if (flag == HOW_MANY_ADD - 1 && strcmp(temp, line1) == 0)
+            }*/
+            /*if (/*flag == HOW_MANY_ADD - 1 && strcmp(input, line1) == 0)
             {
                 fclose(stagehash);
                 stagehash = fopen("stageHASH.txt", "r");
@@ -834,16 +921,24 @@ void reset_for_absolute_address(char *input)
                 rename("stageADDRESS1.txt", "stageADDRESS.txt");
                 char *temp_rmdir = (char *)malloc(100 * sizeof(char));
                 strcpy(temp_rmdir, "rmdir /s ");
-                strcat(temp_rmdir, line1);
+                strcat(temp_rmdir, line);
                 system(temp_rmdir);
                 free(temp_rmdir);
-                break;
-            }
-            WHICH_LINE++;
+                //break;
+            }*/
+            // WHICH_LINE++;
         }
-        free(temp);
-        // fclose(stagehash);
-        // fclose(stageaddress);
+        fclose(stageaddress);
+        fclose(stagehash);
+        fclose(newstageaddress);
+        fclose(newstagehash);
+        system("del stageHASH.txt");
+        rename("stageHASH1.txt", "stageHASH.txt");
+        system("del stageADDRESS.txt");
+        rename("stageADDRESS1.txt", "stageADDRESS.txt");
+        // free(temp);
+        //  fclose(stagehash);
+        //  fclose(stageaddress);
     }
 }
 void removeLineFromFile(FILE *file, int lineToRemove, char *file_name)
@@ -2146,6 +2241,7 @@ char *HEAD_HASH(int n) ////////////////////remember to free
     fclose(file);
     char *output = (char *)malloc(100 * sizeof(char));
     strcpy(output, line0);
+    return output;
     chdir(firstDirectory);
 
     return output;
@@ -2411,7 +2507,7 @@ void run_diff(int argc, char *argv[])
     {
         int x = atoi(argv[7]);
         int y = atoi(argv[10]);
-        //printf("%d",x);
+        // printf("%d",x);
         if (file_line_count(argv[3]) < x)
         {
             x = file_line_count(argv[3]);
@@ -2430,95 +2526,70 @@ void run_diff(int argc, char *argv[])
         chdir(temp);
         chdir(".neogit");
         free(temp);
+
         chdir(argv[3]);
-        char **save1_hash = (char **)malloc(10 * sizeof(char));
-        for (int i = 0; i < 10; i++)
+        all_stage();
+        char **save_hash_1 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
         {
-            *(save1_hash + i) = (char *)malloc(20 * sizeof(char));
+            *(save_hash_1 + i) = (char *)malloc(20 * sizeof(char));
         }
-        char **save1_address = (char **)malloc(10 * sizeof(char));
-        for (int i = 0; i < 10; i++)
+        char **save_address_1 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
         {
-            *(save1_address + i) = (char *)malloc(50 * sizeof(char));
+            *(save_address_1 + i) = (char *)malloc(50 * sizeof(char));
         }
-        //////////////////
-        char line[20];
-        char line1[50];
-        int x = ADD_COUNT("stageHASH.txt");
-        FILE *stagehash = fopen("stageHASH.txt", "r");
-        FILE *stageaddress = fopen("stageADDRESS.txt", "r");
-        int count = 0;
-        int i = 0;
-        int X;
-        while (fgets(line, sizeof(line), stagehash) != NULL)
+        FILE *hash1 = fopen("allHASH.txt", "r");
+        FILE *address1 = fopen("allADDRESS.txt", "r");
+        int count1 = 0;
+        char line[100];
+        while (fgets(line, sizeof(line), hash1) != NULL)
         {
-            fgets(line1, sizeof(line1), stageaddress);
             line[strlen(line) - 1] = '\0';
-            line1[strlen(line1) - 1] = '\0';
-            if (strcmp(line, "ADD") == 0)
-            {
-                count++;
-                continue;
-            }
-            if (count == x - 1)
-            {
-                strcpy(*(save1_hash + i), line);
-                strcpy(*(save1_address + i), line1);
-                i++;
-            }
+            strcpy(*(save_hash_1 + count1), line);
+            fgets(line, sizeof(line), address1);
+            line[strlen(line) - 1] = '\0';
+            strcpy(*(save_address_1 + count1), line);
+            count1++;
         }
-        X = i;
-        fclose(stagehash);
-        fclose(stageaddress);
-        ////////////
+        fclose(hash1);
+        fclose(address1);
         chdir("..");
+        ///////////////
         chdir(argv[4]);
-        char **save2_hash = (char **)malloc(10 * sizeof(char));
-        for (int i = 0; i < 10; i++)
+        all_stage();
+        char **save_hash_2 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
         {
-            *(save2_hash + i) = (char *)malloc(20 * sizeof(char));
+            *(save_hash_2 + i) = (char *)malloc(20 * sizeof(char));
         }
-        char **save2_address = (char **)malloc(10 * sizeof(char));
-        for (int i = 0; i < 10; i++)
+        char **save_address_2 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
         {
-            *(save2_address + i) = (char *)malloc(50 * sizeof(char));
+            *(save_address_2 + i) = (char *)malloc(50 * sizeof(char));
         }
-        //////////////////
-        x = ADD_COUNT("stageHASH.txt");
-        stagehash = fopen("stageHASH.txt", "r");
-        stageaddress = fopen("stageADDRESS.txt", "r");
-        count = 0;
-        i = 0;
-        int Y;
-        while (fgets(line, sizeof(line), stagehash) != NULL)
+        FILE *hash2 = fopen("allHASH.txt", "r");
+        FILE *address2 = fopen("allADDRESS.txt", "r");
+        int count2 = 0;
+        while (fgets(line, sizeof(line), hash2) != NULL)
         {
-            fgets(line1, sizeof(line1), stageaddress);
             line[strlen(line) - 1] = '\0';
-            line1[strlen(line1) - 1] = '\0';
-            if (strcmp(line, "ADD") == 0)
-            {
-                count++;
-                continue;
-            }
-            if (count == x - 1)
-            {
-                strcpy(*(save2_hash + i), line);
-                strcpy(*(save2_address + i), line1);
-                i++;
-            }
+            strcpy(*(save_hash_2 + count2), line);
+            fgets(line, sizeof(line), address2);
+            line[strlen(line) - 1] = '\0';
+            strcpy(*(save_address_2 + count2), line);
+            count2++;
         }
-        Y = i;
-        fclose(stagehash);
-        fclose(stageaddress);
-        //////////
+        fclose(hash2);
+        fclose(address2);
         chdir("..");
-        //////////////////////////////////////////
-        for (int i = 0; i < X; i++)
+        //////////////////
+        for (int i = 0; i < count1; i++)
         {
             int flag = 0;
-            for (int j = 0; j < Y; j++)
+            for (int j = 0; j < count2; j++)
             {
-                if (strcmp(*(save1_address + i), *(save2_address + j)) == 0)
+                if (strcmp(*(save_address_1 + i), *(save_address_2 + j)) == 0)
                 {
                     flag = 1;
                     break;
@@ -2526,17 +2597,15 @@ void run_diff(int argc, char *argv[])
             }
             if (flag == 0)
             {
-                printf("\033[32m%s\n\033[0m", *(save1_address + i));
-                **(save1_hash + i) = '\0';
+                printf("\033[32m%s\n\033[0m", *(save_address_1 + i));
             }
         }
-        ////////////////////
-        for (int i = 0; i < Y; i++)
+        for (int i = 0; i < count2; i++)
         {
             int flag = 0;
-            for (int j = 0; j < X; j++)
+            for (int j = 0; j < count1; j++)
             {
-                if (strcmp(*(save2_address + i), *(save1_address + j)) == 0)
+                if (strcmp(*(save_address_2 + i), *(save_address_1 + j)) == 0)
                 {
                     flag = 1;
                     break;
@@ -2544,60 +2613,44 @@ void run_diff(int argc, char *argv[])
             }
             if (flag == 0)
             {
-                printf("\033[36m%s\n\033[0m", *(save2_address + i));
-                **(save2_hash + i) = '\0';
+                printf("\033[35m%s\n\033[0m", *(save_address_2 + i));
             }
         }
-        /////////////////////////////////////////
-        for (int i = 0; i < X; i++)
+        for (int i = 0; i < count1; i++)
         {
-            if (**(save1_hash + i) != '\0' && **(save2_hash + i) != '\0')
+            int flag = 0;
+            int k;
+            for (int j = 0; j < count2; j++)
             {
-                char temp[20];
-                int A;
-                for (int j = strlen(*(save1_address + i)) - 1; j >= 0; j--)
+                if (strcmp(*(save_address_1 + i), *(save_address_2 + j)) == 0)
                 {
-                    if (*(*(save1_address + i) + j) == '\\')
+                    flag = 1;
+                    k = j;
+                    break;
+                }
+            }
+            if (flag == 1)
+            {
+                char name[100];
+                for (int j = strlen(*(save_address_1 + i)) - 1; j >= 0; j--)
+                {
+                    if (*(*(save_address_1 + i) + j) == '\\')
                     {
-                        A = j;
+                        name[-j - 1 + strlen(*(save_address_1 + i))] = '\0';
                         break;
                     }
+                    name[-j - 1 + strlen(*(save_address_1 + i))] = *(*(save_address_1 + i) + j);
                 }
-                for (int k = A; k < strlen(*(save1_address + i)); k++)
-                {
-                    temp[k - A] = *(*(save1_address + i) + k);
-                    if (k == strlen(*(save1_address + i)) - 1)
-                    {
-                        temp[k - A + 1] = '\0';
-                    }
-                }
-                char first[40];
-                strcpy(first, *(save1_hash + i));
-                strcat(first, temp);
-                ////////////////////////////
-                for (int j = strlen(*(save2_address + i)) - 1; j >= 0; j--)
-                {
-                    if (*(*(save2_address + i) + j) == '\\')
-                    {
-                        A = j;
-                        break;
-                    }
-                }
-                for (int k = A; k < strlen(*(save2_address + i)); k++)
-                {
-                    temp[k - A] = *(*(save2_address + i) + k);
-                    if (k == strlen(*(save2_address + i)) - 1)
-                    {
-                        temp[k - A + 1] = '\0';
-                    }
-                }
-                char second[40];
-                strcpy(second, *(save1_hash + i));
-                strcat(second, temp);
-                ///////////////////
-                int XXX = file_line_count(first);
-                int YYY = file_line_count(second);
-                diff(first, 1, XXX, second, 1, YYY);
+                reverseString(name);
+                char first[100];
+                char second[100];
+                strcpy(first, *(save_hash_1 + i));
+                strcat(first, "\\");
+                strcat(first, name);
+                strcpy(second, *(save_hash_2 + k));
+                strcat(second, "\\");
+                strcat(second, name);
+                diff(first, 1, file_line_count(first), second, 1, file_line_count(second));
             }
         }
 
@@ -2658,45 +2711,51 @@ void diff(char *file1, int file1_begin, int file1_end, char *file2, int file2_be
     int Y = file2_begin;
     for (int i = file1_begin + file2_begin; i < file1_end + file2_end; i++)
     {
-        //for (int j = file2_begin; j < file2_end; j++)
+        // for (int j = file2_begin; j < file2_end; j++)
         //{
-            //if (X == file1_end || Y == file2_end)
-            //{
-            //    break;
-            //}
-            //line1[strlen(line1) - 1] = '\0';
-            //line2[strlen(line2) - 1] = '\0';
-            if (check_NULL_space(line1) == 1 && check_NULL_space(line2) == 0)
+        // if (X == file1_end || Y == file2_end)
+        //{
+        //     break;
+        // }
+        // line1[strlen(line1) - 1] = '\0';
+        // line2[strlen(line2) - 1] = '\0';
+        if (check_NULL_space(line1) == 1 && check_NULL_space(line2) == 0)
+        {
+            fgets(line2, sizeof(line2), file_2);
+            Y++;
+        }
+        else if (check_NULL_space(line1) == 0 && check_NULL_space(line2) == 1)
+        {
+            fgets(line1, sizeof(line1), file_1);
+            X++;
+        }
+        else if (check_NULL_space(line1) == 0 && check_NULL_space(line2) == 0)
+        {
+            fgets(line1, sizeof(line1), file_1);
+            X++;
+            fgets(line2, sizeof(line2), file_2);
+            Y++;
+        }
+        else if (check_NULL_space(line1) == 1 && check_NULL_space(line2) == 1)
+        {
+            if (strcmp(line1, line2) != 0)
             {
-                fgets(line2, sizeof(line2), file_2);
-                Y++;
-            }
-            else if (check_NULL_space(line1) == 0 && check_NULL_space(line2) == 1)
-            {
-                fgets(line1, sizeof(line1), file_1);
-                X++;
-            }
-            else if (check_NULL_space(line1) == 0 && check_NULL_space(line2) == 0)
-            {
-                fgets(line1, sizeof(line1), file_1);
-                X++;
-                fgets(line2, sizeof(line2), file_2);
-                Y++;
-            }
-            else if (check_NULL_space(line1) == 1 && check_NULL_space(line2) == 1)
-            {
-                if (strcmp(line1, line2) != 0)
+                if (X <= file1_end)
                 {
                     printf("\033[32m%s - %d\n%s\n\033[0m", file1, X, line1);
-                    printf("\033[36m%s - %d\n%s\n--------------------\n\033[0m", file2, Y, line2);
-                    fgets(line1, sizeof(line1), file_1);
-                    X++;
-                    fgets(line2, sizeof(line2), file_2);
-                    Y++;
                 }
+                if (Y <= file2_end)
+                {
+                    printf("\033[36m%s - %d\n%s\n--------------------\n\033[0m", file2, Y, line2);
+                }
+                fgets(line1, sizeof(line1), file_1);
+                fgets(line2, sizeof(line2), file_2);
             }
+            X++;
+            Y++;
+        }
         //}
-        //if (X == file1_end || Y == file2_end)
+        // if (X == file1_end || Y == file2_end)
         //{
         //    break;
         //}
@@ -2712,4 +2771,289 @@ int check_NULL_space(char *input)
         }
     }
     return 0;
+}
+void run_merge(int argc, char *argv[])
+{
+    if (argc == 5 && strcmp(argv[2], "-b") == 0)
+    {
+        char firstDirectory[FILENAME_MAX];
+        getcwd(firstDirectory, sizeof(firstDirectory));
+        char *temp = where_is_neogit();
+        chdir(temp);
+        chdir(".neogit");
+        free(temp);
+
+        char *branch1 = branch_head_hash(argv[3]);
+        char *branch2 = branch_head_hash(argv[4]);
+        char line[100];
+        chdir(branch1);
+        all_stage();
+        char **save_hash_1 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
+        {
+            *(save_hash_1 + i) = (char *)malloc(20 * sizeof(char));
+        }
+        char **save_address_1 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
+        {
+            *(save_address_1 + i) = (char *)malloc(50 * sizeof(char));
+        }
+        FILE *hash1 = fopen("allHASH.txt", "r");
+        FILE *address1 = fopen("allADDRESS.txt", "r");
+        int count1 = 0;
+        while (fgets(line, sizeof(line), hash1) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            strcpy(*(save_hash_1 + count1), line);
+            fgets(line, sizeof(line), address1);
+            line[strlen(line) - 1] = '\0';
+            strcpy(*(save_address_1 + count1), line);
+            count1++;
+        }
+        fclose(hash1);
+        fclose(address1);
+        chdir("..");
+        /////////////
+        chdir(branch2);
+        all_stage();
+        char **save_hash_2 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
+        {
+            *(save_hash_2 + i) = (char *)malloc(20 * sizeof(char));
+        }
+        char **save_address_2 = (char **)malloc(20 * sizeof(char *));
+        for (int i = 0; i < 20; i++)
+        {
+            *(save_address_2 + i) = (char *)malloc(50 * sizeof(char));
+        }
+        FILE *hash2 = fopen("allHASH.txt", "r");
+        FILE *address2 = fopen("allADDRESS.txt", "r");
+        int count2 = 0;
+        while (fgets(line, sizeof(line), hash2) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            strcpy(*(save_hash_2 + count2), line);
+            fgets(line, sizeof(line), address2);
+            line[strlen(line) - 1] = '\0';
+            strcpy(*(save_address_2 + count2), line);
+            count2++;
+        }
+        fclose(hash2);
+        fclose(address2);
+        chdir("..");
+        ////////////////
+        for (int i = 0; i < count2; i++)
+        {
+            int flag = 0;
+            int k;
+            for (int j = 0; j < count1; j++)
+            {
+                if (strcmp(*(save_address_2 + i), *(save_address_1 + j)) == 0)
+                {
+                    k = j;
+                    flag = 1;
+                    break;
+                }
+            }
+            if (flag == 0)
+            {
+                copy_folder(*(save_hash_2 + i), *(save_address_2 + i));
+            }
+            else
+            {
+                diff(*(save_address_1 + k), 1, file_line_count(*(save_address_1 + k)),
+                     *(save_address_2 + i), 1, file_line_count(*(save_address_2 + i)));
+                int x;
+                scanf("%d", &x);
+                if (x == 1)
+                {
+                    printf("\033[32msuccessfully\033[0m");
+                }
+                else if (x == 2)
+                {
+                    copy_folder(*(save_hash_2 + i), *(save_address_2 + i));
+                }
+            }
+        }
+        chdir(firstDirectory);
+    }
+    else
+    {
+        printf("\033[31mplease enter a valid command\033[0m\n");
+    }
+}
+char *branch_head_hash(char *branch_name) // remember to free
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    FILE *file = fopen("COMMIT.txt", "r");
+    char line0[20];
+    char line1[30];
+
+    char *save = (char *)malloc(20 * sizeof(char));
+    while (fgets(line0, sizeof(line0), file) != NULL)
+    {
+        fgets(line1, sizeof(line1), file);
+        line1[strlen(line1) - 1] = '\0';
+        if (strcmp(line1, branch_name) == 0)
+        {
+            line0[strlen(line0) - 1] = '\0';
+            strcpy(save, line0);
+        }
+        fgets(line0, sizeof(line0), file);
+        fgets(line0, sizeof(line0), file);
+        fgets(line0, sizeof(line0), file);
+        fgets(line0, sizeof(line0), file);
+    }
+    fclose(file);
+    chdir(firstDirectory);
+    return save;
+}
+void all_stage()
+{
+    FILE *stagehash = fopen("stageHASH.txt", "r");
+    FILE *stageaddress = fopen("stageADDRESS.txt", "r");
+
+    char **save_hash = (char **)malloc(20 * sizeof(char *));
+    for (int i = 0; i < 20; i++)
+    {
+        *(save_hash + i) = (char *)malloc(20 * sizeof(char));
+    }
+    char **save_address = (char **)malloc(20 * sizeof(char *));
+    for (int i = 0; i < 20; i++)
+    {
+        *(save_address + i) = (char *)malloc(50 * sizeof(char));
+    }
+    char hash[20];
+    char address[50];
+    int X = 0;
+    while (fgets(hash, sizeof(hash), stagehash) != NULL)
+    {
+        fgets(address, sizeof(address), stageaddress);
+        hash[strlen(hash) - 1] = '\0';
+        address[strlen(address) - 1] = '\0';
+        if (strcmp(hash, "ADD") != 0)
+        {
+            strcpy(*(save_hash + X), hash);
+            strcpy(*(save_address + X), address);
+            X++;
+        }
+    }
+    fclose(stagehash);
+    fclose(stageaddress);
+    FILE *all_stage_hash = fopen("allHASH.txt", "w");
+    FILE *all_stage_address = fopen("allADDRESS.txt", "w");
+    for (int i = X - 1; i >= 0; i--)
+    {
+        int flag = 0;
+        for (int j = X - 1; j > i; j--)
+        {
+            if (strcmp(*(save_address + i), *(save_address + j)) == 0)
+            {
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            fprintf(all_stage_hash, "%s\n", *(save_hash + i));
+            fprintf(all_stage_address, "%s\n", *(save_address + i));
+        }
+    }
+    fclose(all_stage_hash);
+    fclose(all_stage_address);
+    free(save_address);
+    free(save_hash);
+}
+int check_invalid_alias(char *input)
+{
+    char temp[100];
+    strcpy(temp, input);
+    char *token = strtok(temp, " ");
+    if (strcmp(token, "neogit") != 0)
+    {
+        return 0;
+    }
+    else
+    {
+        token = strtok(NULL, " ");
+        if (strcmp(token, "init") == 0 || strcmp(token, "config") == 0 || strcmp(token, "add") == 0 || strcmp(token, "reset") == 0 || strcmp(token, "status") == 0 || strcmp(token, "commit") == 0 || strcmp(token, "set") == 0 || strcmp(token, "replace") == 0 || strcmp(token, "remove") == 0 || strcmp(token, "log") == 0 || strcmp(token, "branch") == 0 || strcmp(token, "checkout") == 0 || strcmp(token, "tag") == 0 || strcmp(token, "diff") == 0 || strcmp(token, "merge") == 0)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+}
+int run_alias(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        return 0;
+    }
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+    FILE *file = fopen("alias.txt", "r");
+    char alias[30];
+    char command[30];
+    chdir(firstDirectory);
+    while (fgets(alias, sizeof(alias), file) != NULL)
+    {
+        fgets(command, sizeof(command), file);
+        alias[strlen(alias) - 1] = '\0';
+        command[strlen(command) - 1] = '\0';
+        if (strcmp(alias, argv[1]) == 0)
+        {
+            printf("%s", command);
+            system(command);
+            return 1;
+        }
+    }
+    fclose(file);
+    temp = where_is_global_information();
+    chdir(temp);
+    free(temp);
+    file = fopen("aliasGLOB.txt", "r");
+    chdir(firstDirectory);
+    while (fgets(alias, sizeof(alias), file) != NULL)
+    {
+        fgets(command, sizeof(command), file);
+        alias[strlen(alias) - 1] = '\0';
+        command[strlen(command) - 1] = '\0';
+        if (strcmp(alias, argv[1]) == 0)
+        {
+            system(command);
+            return 1;
+        }
+    }
+    fclose(file);
+    chdir(firstDirectory);
+    return 0;
+}
+void reverseString(char str[])
+{
+    int length = strlen(str);
+    int start = 0;
+    int end = length - 1;
+
+    while (start < end)
+    {
+        char temp = str[start];
+        str[start] = str[end];
+        str[end] = temp;
+
+        start++;
+        end--;
+    }
 }
