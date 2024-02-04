@@ -59,6 +59,7 @@ int todo_check(char *);
 char *what_is_file_format(char *);
 int eof_blank_space(char *);
 int format_check(char *);
+int balance_braces(char *);
 
 int main(int argc, char *argv[])
 {
@@ -3101,7 +3102,7 @@ void run_precommit(int argc, char *argv[])
     else if (argc == 5 && strcmp(argv[2], "add") == 0 && strcmp(argv[3], "hook") == 0)
     {
         FILE *file = fopen("appliedhooks.txt", "a");
-        fprintf("%s\n", argv[4]);
+        fprintf(file, "%s\n", argv[4]);
         fclose(file);
     }
     else if (argc == 5 && strcmp(argv[2], "remove") == 0 && strcmp(argv[3], "hook") == 0)
@@ -3142,7 +3143,7 @@ char *what_is_file_format(char *file_path)
     reverseString(format);
     return format;
 }
-int todo_check(char *file_path)
+int todo_check(char *file_path) ///////////////////////need update
 {
     if (strcmp(what_is_file_format(file_path), "c") != 0 && strcmp(what_is_file_format(file_path), "cpp") != 0 && strcmp(what_is_file_format(file_path), "txt") != 0)
     {
@@ -3158,7 +3159,7 @@ int todo_check(char *file_path)
             line[strlen(line) - 1] = '\0';
             for (int i = 0; i < strlen(line); i++)
             {
-                if (line[0] == ' ' && line[1] == 'T' && line[2] == 'O' && line[3] == 'D' && line[4] == 'O')
+                if (line[0] == ' ' && line[1] == 'T' && line[2] == 'O' && line[3] == 'D' && line[4] == 'O' && line[5] == ' ')
                 {
                     flag = 1;
                     break;
@@ -3205,11 +3206,78 @@ int eof_blank_space(char *file_path)
         }
         else
         {
-            return 0;
+            return -1;
         }
     }
 }
 int format_check(char *file_path)
 {
-
+    char *format = what_is_file_format(file_path);
+    if (strcmp(format, "c") != 0 && strcmp(format, "cpp") != 0 && strcmp(format, "txt") != 0 && strcmp(format, "mp3") != 0 &&
+        strcmp(format, "mp4") != 0 && strcmp(format, "wav") != 0 && strcmp(format, "pdf") != 0)
+    {
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+}
+int balance_braces(char *file_path)
+{
+    if (strcmp(what_is_file_format(file_path), "c") != 0 && strcmp(what_is_file_format(file_path), "cpp") != 0 && strcmp(what_is_file_format(file_path), "txt") != 0)
+    {
+        return 0;
+    }
+    else
+    {
+        char line[256];
+        FILE *file = fopen(file_path, "r");
+        int x = 0;
+        int X = 0;
+        int y = 0;
+        int Y = 0;
+        int z = 0;
+        int Z = 0;
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            for (int i = 0; i < strlen(line); i++)
+            {
+                if (line[i] == '(')
+                {
+                    x++;
+                }
+                if (line[i] == ')')
+                {
+                    X++;
+                }
+                if (line[i] == '[')
+                {
+                    y++;
+                }
+                if (line[i] == ']')
+                {
+                    Y++;
+                }
+                if (line[i] == '{')
+                {
+                    z++;
+                }
+                if (line[i] == '}')
+                {
+                    Z++;
+                }
+            }
+        }
+        if ( x == X && y == Y && z == Z)
+        {
+            return 1;
+        }
+        else
+        {
+            return -1;
+        }
+        
+    }
 }
