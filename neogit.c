@@ -60,6 +60,11 @@ char *what_is_file_format(char *);
 int eof_blank_space(char *);
 int format_check(char *);
 int balance_braces(char *);
+int getFileSize(char *);
+int file_size_check(char *);
+int countCharacters(char *);
+int character_limit(char *);
+int static_error_check(char *);
 
 int main(int argc, char *argv[])
 {
@@ -2385,20 +2390,30 @@ void run_tag(int argc, char *argv[])
                     file = fopen("TAG.txt", "r");
                     removeLineFromFile(file, WHICH_LINE, "temp.txt");
                     fclose(file);
+                    system("del TAG.txt");
+                    rename("temp.txt", "TAG.txt");
                     file = fopen("TAG.txt", "r");
-                    removeLineFromFile(file, WHICH_LINE + 1, "temp.txt");
+                    removeLineFromFile(file, WHICH_LINE, "temp.txt");
                     fclose(file);
+                    system("del TAG.txt");
+                    rename("temp.txt", "TAG.txt");
                     file = fopen("TAG.txt", "r");
-                    removeLineFromFile(file, WHICH_LINE + 2, "temp.txt");
+                    removeLineFromFile(file, WHICH_LINE, "temp.txt");
                     fclose(file);
+                    system("del TAG.txt");
+                    rename("temp.txt", "TAG.txt");
                     file = fopen("TAG.txt", "r");
-                    removeLineFromFile(file, WHICH_LINE + 3, "temp.txt");
+                    removeLineFromFile(file, WHICH_LINE, "temp.txt");
                     fclose(file);
+                    system("del TAG.txt");
+                    rename("temp.txt", "TAG.txt");
                     file = fopen("TAG.txt", "r");
-                    removeLineFromFile(file, WHICH_LINE + 4, "temp.txt");
+                    removeLineFromFile(file, WHICH_LINE, "temp.txt");
                     fclose(file);
+                    system("del TAG.txt");
+                    rename("temp.txt", "TAG.txt");
                     file = fopen("TAG.txt", "r");
-                    removeLineFromFile(file, WHICH_LINE + 5, "temp.txt");
+                    removeLineFromFile(file, WHICH_LINE, "temp.txt");
                     fclose(file);
                     system("del TAG.txt");
                     rename("temp.txt", "TAG.txt");
@@ -3095,7 +3110,7 @@ void run_precommit(int argc, char *argv[])
         char line[30];
         while (fgets(line, sizeof(line), file) != NULL)
         {
-            printf("%s", line);
+            printf("\033[32m%s\033[0m", line);
         }
         fclose(file);
     }
@@ -3104,6 +3119,7 @@ void run_precommit(int argc, char *argv[])
         FILE *file = fopen("appliedhooks.txt", "a");
         fprintf(file, "%s\n", argv[4]);
         fclose(file);
+        printf("\033[32msuccessfully\n\033[0m");
     }
     else if (argc == 5 && strcmp(argv[2], "remove") == 0 && strcmp(argv[3], "hook") == 0)
     {
@@ -3117,14 +3133,147 @@ void run_precommit(int argc, char *argv[])
             {
                 continue;
             }
-            fprintf(temp, "%s\n", argv[4]);
+            fprintf(temp, "%s\n", line);
         }
         fclose(file);
         fclose(temp);
         system("del appliedhooks.txt");
         rename("temp.txt", "appliedhooks.txt");
+        printf("\033[32msuccessfully\n\033[0m");
     }
-    // all_stage();
+    else if (argc == 2 && strcmp(argv[1], "pre-commit") == 0)
+    {
+        all_stage();
+        FILE *file = fopen("allADDRESS.txt", "r");
+        char line[100];
+        char hook_line[100];
+        while (fgets(line, sizeof(line), file) != NULL)
+        {
+            line[strlen(line) - 1] = '\0';
+            FILE *hook = fopen("appliedhooks.txt", "r");
+            while (fgets(hook_line, sizeof(hook_line), hook) != NULL)
+            {
+                hook_line[strlen(hook_line) - 1] = '\0';
+                if (strcmp(hook_line, "todo-check") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (todo_check(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+                else if (strcmp(hook_line, "eof-blank-space") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (eof_blank_space(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+                else if (strcmp(hook_line, "format-check") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (format_check(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+                else if (strcmp(hook_line, "balance-braces") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (balance_braces(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+                else if (strcmp(hook_line, "static-error-check") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (static_error_check(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+                else if (strcmp(hook_line, "file-size-check") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (file_size_check(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+                else if (strcmp(hook_line, "character-limit") == 0)
+                {
+                    printf("\033[35m%s\n\033[0m",line);
+                    switch (character_limit(line))
+                    {
+                    case -1:
+                        printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        break;
+                    case 0:
+                        printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                        break;
+                    case 1:
+                        printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                        break;
+                    }
+                }
+            }
+            fclose(hook);
+        }
+        fclose(file);
+        system("del allADDRESS.txt");
+
+    }
+
     chdir(firstDirectory);
 }
 char *what_is_file_format(char *file_path)
@@ -3135,10 +3284,10 @@ char *what_is_file_format(char *file_path)
     {
         if (file_path[i] == '.')
         {
-            format[i + 1 - strlen(file_path)] = '\0';
+            format[- i - 1 + strlen(file_path)] = '\0';
             break;
         }
-        format[i + 1 - strlen(file_path)] = file_path[i];
+        format[- i - 1 + strlen(file_path)] = file_path[i];
     }
     reverseString(format);
     return format;
@@ -3241,7 +3390,6 @@ int balance_braces(char *file_path)
         int Z = 0;
         while (fgets(line, sizeof(line), file) != NULL)
         {
-            line[strlen(line) - 1] = '\0';
             for (int i = 0; i < strlen(line); i++)
             {
                 if (line[i] == '(')
@@ -3270,7 +3418,7 @@ int balance_braces(char *file_path)
                 }
             }
         }
-        if ( x == X && y == Y && z == Z)
+        if (x == X && y == Y && z == Z)
         {
             return 1;
         }
@@ -3278,6 +3426,113 @@ int balance_braces(char *file_path)
         {
             return -1;
         }
-        
+    }
+}
+int getFileSize(char *filename)
+{
+    FILE *file = fopen(filename, "rb");
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fclose(file);
+    return fileSize;
+}
+int file_size_check(char *file_path)
+{
+    if (getFileSize(file_path) > 5000000)
+    {
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+}
+int countCharacters(char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    int charCount = 0;
+    int ch;
+    while ((ch = fgetc(file)) != EOF)
+    {
+        charCount++;
+    }
+    fclose(file);
+    return charCount;
+}
+int character_limit(char *file_path)
+{
+    if (strcmp(what_is_file_format(file_path), "c") != 0 && strcmp(what_is_file_format(file_path), "cpp") != 0 && strcmp(what_is_file_format(file_path), "txt") != 0)
+    {
+        return 0;
+    }
+    else
+    {
+        if (countCharacters(file_path) > 20000)
+        {
+            return -1;
+        }
+        else
+        {
+            return 1;
+        }
+    }
+}
+int static_error_check(char *file_path)
+{
+    if (strcmp(what_is_file_format(file_path), "c") == 0)
+    {
+        char *temp = (char *)malloc(100 * sizeof(char));
+        strcpy(temp, file_path);
+        temp[strlen(temp) - 1] = '\0'; ///////belabela.
+        strcat(temp, "exe");
+        char *command = (char *)malloc(100 * sizeof(char));
+        strcpy(command, "del ");
+        strcat(command, temp);
+        free(command);
+        strcpy(command, "gcc ");
+        strcat(command, file_path);
+        strcat(command, " -o ");
+        strcat(command, temp);
+        system(command);
+        FILE *file = fopen(temp, "rb");
+        if (file == NULL)
+        {
+            return -1;
+        }
+        else
+        {
+            fclose(file);
+            return 1;
+        }
+    }
+    else if (strcmp(what_is_file_format(file_path), "cpp") == 0)
+    {
+        char *temp = (char *)malloc(100 * sizeof(char));
+        strcpy(temp, file_path);
+        temp[strlen(temp) - 3] = '\0'; ///////belabela.
+        strcat(temp, "exe");
+        char *command = (char *)malloc(100 * sizeof(char));
+        strcpy(command, "del ");
+        strcat(command, temp);
+        free(command);
+        strcpy(command, "gcc ");
+        strcat(command, file_path);
+        strcat(command, " -o ");
+        strcat(command, temp);
+        system(command);
+        FILE *file = fopen(temp, "rb");
+        if (file == NULL)
+        {
+            return -1;
+        }
+        else
+        {
+            fclose(file);
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
     }
 }
