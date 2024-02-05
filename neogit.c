@@ -3152,6 +3152,7 @@ void run_precommit(int argc, char *argv[])
         FILE *file = fopen("allADDRESS.txt", "r");
         char line[100];
         char hook_line[100];
+        int flag = 0;
         while (fgets(line, sizeof(line), file) != NULL)
         {
             line[strlen(line) - 1] = '\0';
@@ -3166,6 +3167,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3182,6 +3184,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3198,6 +3201,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3214,6 +3218,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3230,6 +3235,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3246,6 +3252,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3262,6 +3269,7 @@ void run_precommit(int argc, char *argv[])
                     {
                     case -1:
                         printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                        flag = 1;
                         break;
                     case 0:
                         printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
@@ -3277,6 +3285,174 @@ void run_precommit(int argc, char *argv[])
         fclose(file);
         system("del allADDRESS.txt");
         system("del allHASH.txt");
+        if (flag == 1)
+        {
+            printf("\033[31mSome hooks failed. be carefull for commit\n\033[0m");
+        }
+    }
+    else if (argc > 3 && strcmp(argv[2], "-f") == 0)
+    {
+        for (int i = 3; i < argc; i++)
+        {
+            char *file_path = (char *)malloc(100 * sizeof(char));
+            strcpy(file_path, firstDirectory);
+            strcat(file_path, "\\");
+            strcat(file_path, argv[i]);
+            FILE *file = fopen(file_path, "r");
+            if (file == NULL)
+            {
+                fclose(file);
+                printf("\033[31mNo such file\n\033[0m");
+            }
+            else
+            {
+                fclose(file);
+                all_stage();
+                file = fopen("allADDRESS.txt", "r");
+                if (searchInFile(file, file_path) == 0)
+                {
+                    printf("\033[31mit is not in stage\n\033[0m");
+                    fclose(file);
+                }
+                else
+                {
+                    fclose(file);
+                    int flag = 0;
+                    char hook_line[100];
+                    FILE *hook = fopen("appliedhooks.txt", "r");
+                    while (fgets(hook_line, sizeof(hook_line), hook) != NULL)
+                    {
+                        hook_line[strlen(hook_line) - 1] = '\0';
+                        if (strcmp(hook_line, "todo-check") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (todo_check(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                        else if (strcmp(hook_line, "eof-blank-space") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (eof_blank_space(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                        else if (strcmp(hook_line, "format-check") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (format_check(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                        else if (strcmp(hook_line, "balance-braces") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (balance_braces(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                        else if (strcmp(hook_line, "static-error-check") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (static_error_check(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                        else if (strcmp(hook_line, "file-size-check") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (file_size_check(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                        else if (strcmp(hook_line, "character-limit") == 0)
+                        {
+                            printf("\033[35m%s\n\033[0m", file_path);
+                            switch (character_limit(file_path))
+                            {
+                            case -1:
+                                printf("\033[36m%s\t\033[31mFAILED\n\033[0m", hook_line);
+                                flag = 1;
+                                break;
+                            case 0:
+                                printf("\033[36m%s\t\033[33mSKIPPED\n\033[0m", hook_line);
+                                break;
+                            case 1:
+                                printf("\033[36m%s\t\033[32mPASSSED\n\033[0m", hook_line);
+                                break;
+                            }
+                        }
+                    }
+                    fclose(hook);
+                    if (flag == 1)
+                    {
+                        printf("\033[31mSome hooks failed. be carefull for commit\n\033[0m");
+                    }
+                }
+                system("del allADDRESS.txt");
+                system("del allHASH.txt");
+            }
+        }
     }
 
     chdir(firstDirectory);
