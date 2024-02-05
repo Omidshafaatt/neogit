@@ -65,6 +65,8 @@ int file_size_check(char *);
 int countCharacters(char *);
 int character_limit(char *);
 int static_error_check(char *);
+void run_grep(int argc, char *argv[]);
+void grep_for_filepath(char *, char *, int);
 
 int main(int argc, char *argv[])
 {
@@ -144,6 +146,10 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "pre-commit") == 0)
     {
         run_precommit(argc, argv);
+    }
+    else if (strcmp(argv[0], "neogit") == 0 && strcmp(argv[1], "grep") == 0)
+    {
+        run_grep(argc, argv);
     }
 
     return 0;
@@ -2678,7 +2684,6 @@ void run_diff(int argc, char *argv[])
                 diff(first, 1, file_line_count(first), second, 1, file_line_count(second));
             }
         }
-
         chdir(firstDirectory);
     }
     else
@@ -3156,7 +3161,7 @@ void run_precommit(int argc, char *argv[])
                 hook_line[strlen(hook_line) - 1] = '\0';
                 if (strcmp(hook_line, "todo-check") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (todo_check(line))
                     {
                     case -1:
@@ -3172,7 +3177,7 @@ void run_precommit(int argc, char *argv[])
                 }
                 else if (strcmp(hook_line, "eof-blank-space") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (eof_blank_space(line))
                     {
                     case -1:
@@ -3188,7 +3193,7 @@ void run_precommit(int argc, char *argv[])
                 }
                 else if (strcmp(hook_line, "format-check") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (format_check(line))
                     {
                     case -1:
@@ -3204,7 +3209,7 @@ void run_precommit(int argc, char *argv[])
                 }
                 else if (strcmp(hook_line, "balance-braces") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (balance_braces(line))
                     {
                     case -1:
@@ -3220,7 +3225,7 @@ void run_precommit(int argc, char *argv[])
                 }
                 else if (strcmp(hook_line, "static-error-check") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (static_error_check(line))
                     {
                     case -1:
@@ -3236,7 +3241,7 @@ void run_precommit(int argc, char *argv[])
                 }
                 else if (strcmp(hook_line, "file-size-check") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (file_size_check(line))
                     {
                     case -1:
@@ -3252,7 +3257,7 @@ void run_precommit(int argc, char *argv[])
                 }
                 else if (strcmp(hook_line, "character-limit") == 0)
                 {
-                    printf("\033[35m%s\n\033[0m",line);
+                    printf("\033[35m%s\n\033[0m", line);
                     switch (character_limit(line))
                     {
                     case -1:
@@ -3271,7 +3276,7 @@ void run_precommit(int argc, char *argv[])
         }
         fclose(file);
         system("del allADDRESS.txt");
-
+        system("del allHASH.txt");
     }
 
     chdir(firstDirectory);
@@ -3284,10 +3289,10 @@ char *what_is_file_format(char *file_path)
     {
         if (file_path[i] == '.')
         {
-            format[- i - 1 + strlen(file_path)] = '\0';
+            format[-i - 1 + strlen(file_path)] = '\0';
             break;
         }
-        format[- i - 1 + strlen(file_path)] = file_path[i];
+        format[-i - 1 + strlen(file_path)] = file_path[i];
     }
     reverseString(format);
     return format;
@@ -3534,5 +3539,87 @@ int static_error_check(char *file_path)
     else
     {
         return 0;
+    }
+}
+void run_grep(int argc, char *argv[])
+{
+    char firstDirectory[FILENAME_MAX];
+    getcwd(firstDirectory, sizeof(firstDirectory));
+    char *temp = where_is_neogit();
+    chdir(temp);
+    chdir(".neogit");
+    free(temp);
+
+    char *file_path = (char *)malloc(100 * sizeof(char));
+    strcpy(file_path, firstDirectory);
+    strcat(file_path, "\\");
+    strcat(file_path, argv[3]);
+
+    if (argc == 6)
+    {
+        grep_for_filepath(file_path, argv[5], 0);
+    }
+    else if (argc == 7 && strcmp(argv[6],"-n") == 0)
+    {
+        grep_for_filepath(file_path, argv[5], 1);
+    }
+    else if (argc == 8 && strcmp(argv[6],"-c") == 0)
+    {
+        
+    }
+    else if (argc == 9 && strcmp(argv[6],"-c") == 0 && strcmp(argv[8],"-n") == 0)
+    {
+        
+    }
+    else
+    {
+        printf("\033[31mplease enter a valid command\033[0m\n");
+    }
+    chdir(firstDirectory);
+}
+void grep_for_filepath(char *file_path, char *word, int yes_or_not)
+{
+    char line[256];
+    FILE *file = fopen(file_path, "r");
+    int line_count = 0;
+    int flag = 0;
+    int FLAG = 0;
+    while (fgets(line, sizeof(line), file) != NULL)
+    {
+        line_count++;
+        line[strlen(line) - 1] = '\0';
+        FLAG = 0;
+        if (strstr(line, word) != NULL)
+        {
+            for (int i = 0; i < strlen(line); i++)
+            {
+                flag = 0;
+                for (int j = 0; j < strlen(word); j++)
+                {
+                    if (line[i + j] != word[j])
+                    {
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag == 1)
+                {
+                    printf("%c", line[i]);
+                }
+                else
+                {
+                    for (int j = 0; j < strlen(word); j++)
+                    {
+                        printf("\033[36m%c\033[0m", line[i + j]);
+                    }
+                    i += strlen(word) - 1;
+                    FLAG = 1;
+                }
+            }
+        }
+        if (yes_or_not == 1 && FLAG == 1)
+        {
+            printf("\t%d\n", line_count);
+        }
     }
 }
