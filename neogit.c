@@ -3559,17 +3559,63 @@ void run_grep(int argc, char *argv[])
     {
         grep_for_filepath(file_path, argv[5], 0);
     }
-    else if (argc == 7 && strcmp(argv[6],"-n") == 0)
+    else if (argc == 7 && strcmp(argv[6], "-n") == 0)
     {
         grep_for_filepath(file_path, argv[5], 1);
     }
-    else if (argc == 8 && strcmp(argv[6],"-c") == 0)
+    else if (argc == 8 && strcmp(argv[6], "-c") == 0)
     {
-        
+        chdir(argv[7]);
+        all_stage();
+        char hash[20];
+        char address[100];
+        FILE *hashfile = fopen("allHASH.txt", "r");
+        FILE *addressfile = fopen("allADDRESS.txt", "r");
+        while (fgets(hash, sizeof(hash), hashfile) != NULL)
+        {
+            fgets(address, sizeof(address), addressfile);
+            hash[strlen(hash) - 1] = '\0';
+            address[strlen(address) - 1] = '\0';
+            if (strcmp(file_path, address) == 0)
+            {
+                break;
+            }
+        }
+        fclose(hashfile);
+        fclose(addressfile);
+        chdir("..");
+        char *path = (char *)malloc(100 * sizeof(char));
+        strcpy(path, hash);
+        strcat(path, "\\");
+        strcat(path, argv[3]);
+        grep_for_filepath(path, argv[5], 0);
     }
-    else if (argc == 9 && strcmp(argv[6],"-c") == 0 && strcmp(argv[8],"-n") == 0)
+    else if (argc == 9 && strcmp(argv[6], "-c") == 0 && strcmp(argv[8], "-n") == 0)
     {
-        
+        chdir(argv[7]);
+        all_stage();
+        char hash[20];
+        char address[100];
+        FILE *hashfile = fopen("allHASH.txt", "r");
+        FILE *addressfile = fopen("allADDRESS.txt", "r");
+        while (fgets(hash, sizeof(hash), hashfile) != NULL)
+        {
+            fgets(address, sizeof(address), addressfile);
+            hash[strlen(hash) - 1] = '\0';
+            address[strlen(address) - 1] = '\0';
+            if (strcmp(file_path, address) == 0)
+            {
+                break;
+            }
+        }
+        fclose(hashfile);
+        fclose(addressfile);
+        chdir("..");
+        char *path = (char *)malloc(100 * sizeof(char));
+        strcpy(path, hash);
+        strcat(path, "\\");
+        strcat(path, argv[3]);
+        grep_for_filepath(path, argv[5], 1);
     }
     else
     {
